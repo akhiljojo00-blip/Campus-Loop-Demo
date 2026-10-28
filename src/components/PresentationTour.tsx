@@ -11,7 +11,10 @@ import {
   HelpCircle,
   PlusCircle,
   Search,
-  CheckCircle2
+  CheckCircle2,
+  ClipboardList,
+  Compass,
+  Coins
 } from 'lucide-react';
 
 export const PresentationTour: React.FC = () => {
@@ -24,6 +27,7 @@ export const PresentationTour: React.FC = () => {
     prevPresentationStep,
     setActiveTab,
     setIsListItemModalOpen,
+    setIsWalletModalOpen,
     setSearchQuery,
     setSelectedCategory
   } = useCampus();
@@ -33,7 +37,7 @@ export const PresentationTour: React.FC = () => {
       step: 1,
       badge: 'The Problem',
       title: 'Expensive Semester Cycles & Hostel Waste',
-      summary: 'Every new academic term, college students are forced to spend ₹3,000–₹8,000 on new textbooks, lab coats, drawing kits, and electronics that are discarded after semester exams.',
+      summary: 'Every semester, college students spend ₹3,000–₹8,000 on new textbooks, lab coats, and calculators that sit idle once examinations conclude.',
       talkingPoints: [
         'Commercial bookstores charge full retail for single-semester books.',
         'Seniors have no organized way to monetize their used study materials.',
@@ -48,51 +52,48 @@ export const PresentationTour: React.FC = () => {
     {
       step: 2,
       badge: 'The Solution',
-      title: 'CampusLoop: Hyper-Local Circular Campus Economy',
-      summary: 'CampusLoop connects buyers and sellers in the same college. Seniors recoup expenses, juniors save up to 70%, and goods stay within the campus loop without shipping fees.',
+      title: 'CampusLoop 2.0: Circular Economy & Wanted Board',
+      summary: 'CampusLoop provides both a marketplace feed AND a reverse "Wanted Board" where students request exact items with their budget.',
       talkingPoints: [
         '“Your campus. Your stuff. Your loop.” tagline & student brand.',
-        'Face-to-face inspection at verified campus locations (Library, Canteen).',
+        'Reverse Wanted Board: buyers post requests, seniors respond with offers.',
         'Zero commission on peer-to-peer student transactions.'
       ],
-      actionLabel: 'Inspect 3-Step Process',
+      actionLabel: 'Inspect Wanted Board',
       onEnter: () => {
-        setActiveTab('how-it-works');
+        setActiveTab('wanted');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     },
     {
       step: 3,
-      badge: 'Live Marketplace',
-      title: 'Real-Time Campus Feed & Search Filters',
-      summary: 'Experience the responsive marketplace seeded with 14 realistic college items: Engineering Maths, ANSI C, Casio fx-991EX, lab coats, and hostel desk lamps.',
+      badge: 'Live Marketplace & Bargaining',
+      title: 'Interactive Bargaining & Campus Map',
+      summary: 'Students negotiate prices directly using an offer/counter-offer state machine, and discover items near their lecture halls via the interactive Leaflet campus map.',
       talkingPoints: [
-        'Instant multi-field search (title, tags, category, location).',
-        'Transparent student pricing with original price comparison and savings percentage.',
-        'Simulated campus chat and local bookmarking.'
+        'Bargaining flow: propose price -> seller accepts/counters -> locks deal.',
+        'Interactive Leaflet campus map showing approximate landmark zones.',
+        'Consent-based 15-minute live meetup proximity radar.'
       ],
-      actionLabel: 'Explore Live Marketplace',
+      actionLabel: 'Explore Campus Map',
       onEnter: () => {
-        setActiveTab('marketplace');
-        setSearchQuery('');
-        setSelectedCategory('All');
+        setActiveTab('map');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     },
     {
       step: 4,
-      badge: 'Live Interactive Demo',
-      title: 'Instant 30-Second Listing Flow',
-      summary: 'Any student can list an item right from their phone. Form includes required field validation, positive pricing checks, category tags, and instant local browser persistence.',
+      badge: 'LoopCoins Virtual Rewards',
+      title: 'Gamified Student Loyalty & Virtual Tokens',
+      summary: 'LoopCoins reward students for positive community actions (listing items, agreeing on offers, leaving peer reviews) and can be spent on listing visibility boosts.',
       talkingPoints: [
-        'Click "+ List an item" to demonstrate the live interactive form.',
-        'Built-in image presets for textbooks, calculators, and gadgets.',
-        'Immediately appears on the top of the feed with a “Demo listing” badge.'
+        'Earn +25 LoopCoins for completed agreements, +15 for listings.',
+        'Spend 40 LoopCoins to pin an item to the top for 48 hours.',
+        'Clear academic disclaimer: zero real monetary value, stored in localStorage.'
       ],
-      actionLabel: 'Open Listing Form',
+      actionLabel: 'Open LoopCoins Wallet',
       onEnter: () => {
-        setActiveTab('marketplace');
-        setIsListItemModalOpen(true);
+        setIsWalletModalOpen(true);
       }
     },
     {
@@ -107,7 +108,7 @@ export const PresentationTour: React.FC = () => {
       ],
       actionLabel: 'Review Business Plan',
       onEnter: () => {
-        setIsListItemModalOpen(false);
+        setIsWalletModalOpen(false);
         setActiveTab('business-model');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -116,14 +117,12 @@ export const PresentationTour: React.FC = () => {
 
   const current = steps[presentationStep];
 
-  // Trigger step action when presentationStep changes
   useEffect(() => {
     if (isPresentationMode && current) {
       current.onEnter();
     }
   }, [isPresentationMode, presentationStep]);
 
-  // Keyboard navigation for presentation
   useEffect(() => {
     if (!isPresentationMode) return;
 
@@ -153,7 +152,7 @@ export const PresentationTour: React.FC = () => {
             </span>
             <div>
               <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-300">
-                BCA Class Presentation Guide
+                BCA Class Presentation Guide (CampusLoop 2.0)
               </span>
               <h3 className="font-serif font-bold text-sm text-white">
                 Step {current.step} of 5: {current.badge}

@@ -1,3 +1,5 @@
+@import "leaflet/dist/leaflet.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,11 +9,21 @@
   color-scheme: light;
 }
 
+.dark {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   background-color: #FAF8F5;
   color: #1C2520;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dark body {
+  background-color: #0D1C15;
+  color: #FAF8F5;
 }
 
 /* Custom scrollbars */
@@ -22,21 +34,72 @@ body {
 ::-webkit-scrollbar-track {
   background: #FAF8F5;
 }
+.dark ::-webkit-scrollbar-track {
+  background: #0D1C15;
+}
 ::-webkit-scrollbar-thumb {
   background: #D2DCD4;
   border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #1F4231;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #B0C9B9;
 }
 
-/* Subtle pattern for hero & headers */
+/* Subtle patterns */
 .bg-grid-pattern {
   background-image: radial-gradient(rgba(21, 50, 37, 0.08) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+.dark .bg-grid-pattern {
+  background-image: radial-gradient(rgba(225, 237, 229, 0.08) 1px, transparent 1px);
 }
 
 .bg-dot-pattern {
   background-image: radial-gradient(rgba(186, 78, 41, 0.12) 1.5px, transparent 1.5px);
   background-size: 20px 20px;
+}
+
+/* Subtle 3D perspective for product cards */
+.perspective-card {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.perspective-inner {
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s ease;
+}
+
+.perspective-inner:hover {
+  transform: translateY(-4px) rotateX(2deg) rotateY(-1deg);
+}
+
+/* Leaflet map customizations */
+.leaflet-container {
+  font-family: inherit;
+  z-index: 10;
+  border-radius: 1.5rem;
+}
+
+.custom-campus-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: #153225;
+  color: #FAF8F5;
+  box-shadow: 0 4px 12px rgba(21, 50, 37, 0.3);
+  border: 2px solid #FAF8F5;
+}
+
+.custom-campus-radar {
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(186, 78, 41, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 16px rgba(186, 78, 41, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(186, 78, 41, 0); }
 }
