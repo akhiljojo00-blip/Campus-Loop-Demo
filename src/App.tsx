@@ -8,6 +8,8 @@ import { HowItWorksSection } from './components/HowItWorksSection';
 import { BusinessModelSection } from './components/BusinessModelSection';
 import { TrustSafetySection } from './components/TrustSafetySection';
 import { MarketplaceView } from './components/MarketplaceView';
+import { WantedBoardView } from './components/WantedBoardView';
+import { CampusMapView } from './components/CampusMapView';
 import { HomeCTA } from './components/HomeCTA';
 import { Footer } from './components/Footer';
 
@@ -19,13 +21,18 @@ import { ReportModal } from './components/ReportModal';
 import { ProfileDrawer } from './components/ProfileDrawer';
 import { ResetConfirmModal } from './components/ResetConfirmModal';
 import { PresentationTour } from './components/PresentationTour';
+import { PostWantedModal } from './components/PostWantedModal';
+import { WantedDetailModal } from './components/WantedDetailModal';
+import { SellerProfileModal } from './components/SellerProfileModal';
+import { ReviewModal } from './components/ReviewModal';
+import { LoopCoinsWalletModal } from './components/LoopCoinsWalletModal';
 import { Toast } from './components/Toast';
 
 const MainContent: React.FC = () => {
   const { activeTab } = useCampus();
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF8F5] text-[#1C2520]">
+    <div className="min-h-screen flex flex-col bg-[#FAF8F5] dark:bg-[#0D1C15] text-[#1C2520] dark:text-[#FAF8F5] transition-colors">
       {/* Top sticky navigation */}
       <Navbar />
 
@@ -44,6 +51,14 @@ const MainContent: React.FC = () => {
 
         {activeTab === 'marketplace' && (
           <MarketplaceView />
+        )}
+
+        {activeTab === 'wanted' && (
+          <WantedBoardView />
+        )}
+
+        {activeTab === 'map' && (
+          <CampusMapView />
         )}
 
         {activeTab === 'how-it-works' && (
@@ -81,6 +96,11 @@ const MainContent: React.FC = () => {
       <ProfileDrawer />
       <ResetConfirmModal />
       <PresentationTour />
+      <PostWantedModal />
+      <WantedDetailModal />
+      <SellerProfileModal />
+      <ReviewModal />
+      <LoopCoinsWalletModal />
       <Toast />
     </div>
   );
