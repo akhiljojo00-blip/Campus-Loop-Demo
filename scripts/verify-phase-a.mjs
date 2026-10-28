@@ -35,9 +35,11 @@ if (fs.existsSync(gitignorePath)) {
   assert(content.includes('.env') && content.includes('!.env.example'), '.gitignore excludes .env files while preserving .env.example');
 }
 
-// 3. Check SQL Migration
+// 3. Check SQL Migrations
 const migrationPath = path.resolve('supabase/migrations/20261028000001_create_profiles.sql');
+const hardeningMigrationPath = path.resolve('supabase/migrations/20261028000002_security_hardening.sql');
 assert(fs.existsSync(migrationPath), 'SQL migration 20261028000001_create_profiles.sql exists');
+assert(fs.existsSync(hardeningMigrationPath), 'SQL migration 20261028000002_security_hardening.sql exists');
 if (fs.existsSync(migrationPath)) {
   const sql = fs.readFileSync(migrationPath, 'utf8');
   assert(sql.includes('create table if not exists public.profiles'), 'Migration creates public.profiles table');
@@ -48,6 +50,11 @@ if (fs.existsSync(migrationPath)) {
   assert(sql.includes('for update'), 'RLS includes self-update policy for profiles');
   assert(sql.includes('create trigger on_auth_user_created'), 'Auth signup trigger on_auth_user_created is configured');
   assert(sql.includes('create trigger on_profile_updated'), 'Updated_at trigger on_profile_updated is configured');
+}
+if (fs.existsSync(hardeningMigrationPath)) {
+  const sql2 = fs.readFileSync(hardeningMigrationPath, 'utf8');
+  assert(sql2.includes('public.user_private_details'), 'Hardening migration creates public.user_private_details');
+  assert(sql2.includes("set search_path = ''"), 'Hardening migration sets search_path = empty on triggers');
 }
 
 // 4. Check Supabase Client and Auth Files

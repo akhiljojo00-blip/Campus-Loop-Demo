@@ -1,31 +1,40 @@
-# CampusLoop 3.0 Supabase Setup Guide
+# CampusLoop 3.0 Supabase Setup & Security Guide
 
-This guide describes how to connect the development Supabase project (`campusloop-dev`) to CampusLoop 3.0 Phase A.
+This guide describes how to connect and migrate the development Supabase project (`campusloop-dev`) for CampusLoop 3.0.
 
 > [!IMPORTANT]
-> **Safety Rule**: Never apply these migrations or configure environment variables against the production database. All Phase A development and testing must target `campusloop-dev`.
+> **Safety Rule**: Never apply these migrations or configure environment variables against the production database. All development and testing must target `campusloop-dev`.
+> **Zero Secrets Policy**: Never commit `.env.local` or expose `service_role` / administrative keys to the frontend.
 
 ---
 
-## 1. Database Migration: Profiles & Auth Triggers
+## 1. Database Migrations
 
-Run the SQL migration in `supabase/migrations/20261028000001_create_profiles.sql`.
+The migrations are located in `supabase/migrations/`:
+- `20261028000001_create_profiles.sql`: Base public profiles schema and triggers.
+- `20261028000002_security_hardening.sql`: Security hardening migration that:
+  1. Isolates private contact data (`user_private_details`) with strict owner-only RLS (`auth.uid() = id`).
+  2. Removes wallet balances and phone numbers from public profile queries.
+  3. Enforces column-level UPDATE grants to prevent unauthorized column tampering.
+  4. Hardens `public.handle_new_user()` and `public.handle_updated_at()` with `SET search_path = ''` and schema qualification.
 
-### Option A: Via Supabase Dashboard (Recommended for fast setup)
+### How to Apply to `campusloop-dev`
+
+#### Option A: Via Supabase Dashboard SQL Editor (Recommended)
 1. Log in to [Supabase Dashboard](https://supabase.com/dashboard).
 2. Open your development project: **`campusloop-dev`**.
-3. In the left navigation, click **SQL Editor**.
-4. Click **New Query**.
-5. Copy and paste the entire contents of `supabase/migrations/20261028000001_create_profiles.sql`.
-6. Click **Run**.
-7. Confirm that the `profiles` table is created under the `public` schema and that RLS is enabled with 3 policies.
+3. In the left navigation, click **SQL Editor** -> **New Query**.
+4. If you have **already run** migration 1 previously:
+   - Paste and run `supabase/migrations/20261028000002_security_hardening.sql`.
+5. If setting up a **fresh development project**:
+   - Run `supabase/migrations/20261028000001_create_profiles.sql`, followed by `20261028000002_security_hardening.sql`.
 
-### Option B: Via Supabase CLI
+#### Option B: Via Supabase CLI
 ```bash
 # Link to development project (confirm project ref matches campusloop-dev)
 npx supabase link --project-ref <your-dev-project-ref>
 
-# Push the migration
+# Push the migrations
 npx supabase db push
 ```
 
@@ -33,31 +42,27 @@ npx supabase db push
 
 ## 2. Environment Variables Configuration
 
-1. In your local project root (`c:\Users\akhil\Downloads\Campusloop`), copy `.env.example` to `.env.local`:
+1. In your local project root (`c:\Users\akhil\Downloads\Campusloop`), create or update `.env.local`:
    ```bash
    cp .env.example .env.local
    ```
 2. Retrieve your project credentials from **Supabase Dashboard** -> **Project Settings** -> **API**:
    - **Project URL**: e.g., `https://abcdefghijklmno.supabase.co`
-   - **Project API Keys**: Copy the **`anon` / `public`** key.
+   - **Project API Keys**: Copy the **Publishable** or **`anon` / `public`** key.
    *(Never use the `service_role` secret key!)*
 3. Populate `.env.local`:
    ```env
    VITE_SUPABASE_URL=https://<your-dev-project-ref>.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-or-anon-key-here
    ```
 4. Note: `.env.local` is listed in `.gitignore` and will never be committed to Git.
 
 ---
 
-## 3. Auth Configuration in Supabase Dashboard
+## 3. Data Boundaries & Security Model
 
-To support email sign-in and verification:
-1. Go to **Authentication** -> **Providers** -> **Email**.
-2. Ensure **Enable Email provider** is turned on.
-3. For local testing:
-   - If **Confirm email** is enabled, new signups will receive a confirmation email with a verification link.
-   - For rapid local testing without waiting for email delivery, you can temporarily disable "Confirm email" or inspect sent emails under **Authentication** -> **Inbucket** / Logs.
-4. Set **Site URL** under **Authentication** -> **URL Configuration**:
-   - Development: `http://localhost:5173`
-   - Redirect URLs: `http://localhost:5173/**`
+| Data Class | Table | Access Level | Protected By |
+| :--- | :--- | :--- | :--- |
+| **Public Profiles** | `public.profiles` | Public read (name, dept, location, avatar, bio) | Column Grants + RLS (`SELECT USING true`) |
+| **Private Contacts** | `public.user_private_details` | Owner only (phone number) | Strict RLS (`auth.uid() = id`) |
+| **Virtual Wallet** | Deferred to authoritative ledger | Server-authoritative | Isolated from client profile updates |

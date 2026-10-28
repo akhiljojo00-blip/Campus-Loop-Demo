@@ -1,18 +1,48 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase, isSupabaseConfigured, UserProfile } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, UserProfile, UserPrivateDetails } from '../lib/supabase';
 
 export type AuthModalMode = 'signin' | 'signup' | 'forgot';
 
-interface SignUpMetadata {
+export interface SignUpMetadata {
   fullName: string;
   department: string;
   campusLocation: string;
 }
 
+// Strict allowlist of editable public profile fields
+export interface EditableProfileFields {
+  full_name?: string;
+  department?: string;
+  campus_location?: string;
+  avatar_url?: string | null;
+  bio?: string | null;
+}
+
+export const ALLOWED_PROFILE_UPDATE_FIELDS: readonly (keyof EditableProfileFields)[] = [
+  'full_name',
+  'department',
+  'campus_location',
+  'avatar_url',
+  'bio'
+] as const;
+
+// Disallowed server-controlled properties that must never be updated by clients
+export const FORBIDDEN_PROFILE_KEYS = [
+  'id',
+  'loopcoins_balance',
+  'email',
+  'created_at',
+  'updated_at',
+  'is_admin',
+  'role',
+  'email_confirmed_at'
+] as const;
+
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
+  privateDetails: UserPrivateDetails | null;
   session: Session | null;
   isLoading: boolean;
   isConfigured: boolean;
@@ -30,22 +60,22 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   resendVerification: (email: string) => Promise<{ success: boolean; error?: string }>;
-  updateProfile: (updates: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
+  updateProfile: (updates: EditableProfileFields) => Promise<{ success: boolean; error?: string }>;
+  updatePrivateDetails: (details: { phone_number?: string | null }) => Promise<{ success: boolean; error?: string }>;
+  fetchPrivateDetails: () => Promise<UserPrivateDetails | null>;
   refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Fallback profile for offline demo mode
+// Fallback profile for offline demo mode (public display fields only)
 const DEMO_OFFLINE_PROFILE: UserProfile = {
   id: 'demo-bca-student-001',
   full_name: 'Aditya Sharma',
   department: '1st Year BCA',
   campus_location: 'Central Library',
   avatar_url: null,
-  phone_number: '+91 98765 43210',
-  bio: '1st Year BCA student passionate about web tech, books, and campus exchange.',
-  loopcoins_balance: 150
+  bio: '1st Year BCA student passionate about web tech, books, and campus exchange.'
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -54,12 +84,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [profile, setProfile] = useState<UserProfile | null>(() => {
     return isSupabaseConfigured ? null : DEMO_OFFLINE_PROFILE;
   });
+  const [privateDetails, setPrivateDetails] = useState<UserPrivateDetails | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(() => isSupabaseConfigured);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<AuthModalMode>('signin');
 
-  // Fetch user profile from Supabase public.profiles
+  // Fetch public user profile from Supabase public.profiles
   const fetchProfile = useCallback(async (userId: string) => {
     if (!isSupabaseConfigured) {
       setProfile(DEMO_OFFLINE_PROFILE);
@@ -67,15 +98,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     try {
+      // Explicitly select only public display columns
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, full_name, department, campus_location, avatar_url, bio, created_at, updated_at')
         .eq('id', userId)
         .single();
 
       if (error) {
         console.warn('Could not fetch profile from Supabase:', error.message);
-        // If trigger hasn't finished inserting yet, don't crash
         return;
       }
 
@@ -86,6 +117,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error('Error fetching user profile:', err);
     }
   }, []);
+
+  // Fetch private user details (strictly owner-only via RLS)
+  const fetchPrivateDetails = useCallback(async (): Promise<UserPrivateDetails | null> => {
+    if (!isSupabaseConfigured || !user?.id) {
+      return null;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('user_private_details')
+        .select('id, phone_number, created_at, updated_at')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.warn('Could not fetch private details:', error.message);
+        return null;
+      }
+
+      if (data) {
+        setPrivateDetails(data as UserPrivateDetails);
+        return data as UserPrivateDetails;
+      }
+      return null;
+    } catch (err) {
+      console.error('Error fetching private details:', err);
+      return null;
+    }
+  }, [user]);
 
   const refreshProfile = useCallback(async () => {
     if (user?.id) {
@@ -139,6 +199,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
+        setPrivateDetails(null);
       }
     });
 
@@ -205,7 +266,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Sign Up with email, password, and metadata
+  // Sign Up with email, password, and public metadata
   const signUp = async (
     email: string, 
     password: string, 
@@ -236,8 +297,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           full_name: metadata.fullName,
           department: metadata.department,
           campus_location: metadata.campusLocation,
-          avatar_url: null,
-          loopcoins_balance: 150
+          avatar_url: null
         });
         setIsLoading(false);
         setIsAuthModalOpen(false);
@@ -264,7 +324,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { success: false, error: error.message };
       }
 
-      // Check if user session was returned or if confirmation is required
       const needsEmailConfirmation = !data.session;
       if (data.user) {
         setUser(data.user);
@@ -295,6 +354,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(null);
       setSession(null);
       setProfile(null);
+      setPrivateDetails(null);
     } catch (err) {
       console.error('Error signing out:', err);
     } finally {
@@ -356,8 +416,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Update Profile
-  const updateProfile = async (updates: Partial<UserProfile>): Promise<{ success: boolean; error?: string }> => {
+  // Strictly restricted profile updates (enforces allowlist & rejects unauthorized fields)
+  const updateProfile = async (
+    updates: EditableProfileFields
+  ): Promise<{ success: boolean; error?: string }> => {
     if (!profile && !user) {
       return { success: false, error: 'User is not logged in' };
     }
@@ -367,21 +429,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false, error: 'No user ID found' };
     }
 
+    // Security check: Reject forbidden property injection (e.g. loopcoins_balance, id, role)
+    const rawKeys = Object.keys(updates);
+    const forbiddenAttempt = rawKeys.find(k => (FORBIDDEN_PROFILE_KEYS as readonly string[]).includes(k));
+    if (forbiddenAttempt) {
+      const errMsg = `Security violation: updating server-controlled field '${forbiddenAttempt}' is strictly prohibited.`;
+      console.warn(errMsg);
+      return { success: false, error: errMsg };
+    }
+
+    // Build strictly allowlisted sanitized payload
+    const sanitizedPayload: EditableProfileFields = {};
+    if (updates.full_name !== undefined) sanitizedPayload.full_name = updates.full_name;
+    if (updates.department !== undefined) sanitizedPayload.department = updates.department;
+    if (updates.campus_location !== undefined) sanitizedPayload.campus_location = updates.campus_location;
+    if (updates.avatar_url !== undefined) sanitizedPayload.avatar_url = updates.avatar_url;
+    if (updates.bio !== undefined) sanitizedPayload.bio = updates.bio;
+
+    if (Object.keys(sanitizedPayload).length === 0) {
+      return { success: false, error: 'No valid editable profile fields provided.' };
+    }
+
     if (!isSupabaseConfigured) {
-      // Local demo mode updates
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
+      // Local demo mode updates with sanitized payload only
+      setProfile(prev => prev ? { ...prev, ...sanitizedPayload } : null);
       return { success: true };
     }
 
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
+        .update(sanitizedPayload)
         .eq('id', targetId)
-        .select()
+        .select('id, full_name, department, campus_location, avatar_url, bio, created_at, updated_at')
         .single();
 
       if (error) {
@@ -399,11 +479,56 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Update private details (owner-only via RLS)
+  const updatePrivateDetails = async (
+    details: { phone_number?: string | null }
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.id) {
+      return { success: false, error: 'User must be authenticated to update private details' };
+    }
+
+    if (!isSupabaseConfigured) {
+      setPrivateDetails(prev => ({
+        id: user.id,
+        phone_number: details.phone_number ?? null,
+        created_at: prev?.created_at,
+        updated_at: new Date().toISOString()
+      }));
+      return { success: true };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('user_private_details')
+        .upsert({
+          id: user.id,
+          phone_number: details.phone_number ?? null,
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (data) {
+        setPrivateDetails(data as UserPrivateDetails);
+      }
+
+      return { success: true };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Private details update failed';
+      return { success: false, error: msg };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         profile,
+        privateDetails,
         session,
         isLoading,
         isConfigured: isSupabaseConfigured,
@@ -420,6 +545,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         resetPassword,
         resendVerification,
         updateProfile,
+        updatePrivateDetails,
+        fetchPrivateDetails,
         refreshProfile
       }}
     >
