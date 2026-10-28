@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #FAF8F5;
+  color: #1C2520;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF8F5;
+}
+::-webkit-scrollbar-thumb {
+  background: #D2DCD4;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B0C9B9;
+}
+
+/* Subtle pattern for hero & headers */
+.bg-grid-pattern {
+  background-image: radial-gradient(rgba(21, 50, 37, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.bg-dot-pattern {
+  background-image: radial-gradient(rgba(186, 78, 41, 0.12) 1.5px, transparent 1.5px);
+  background-size: 20px 20px;
+}
