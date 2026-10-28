@@ -1,4 +1,5 @@
 import React from 'react';
+import { AuthProvider } from './context/AuthContext';
 import { CampusProvider, useCampus } from './context/CampusContext';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
@@ -14,6 +15,7 @@ import { HomeCTA } from './components/HomeCTA';
 import { Footer } from './components/Footer';
 
 // Modals & Panels
+import { AuthModal } from './components/AuthModal';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { ContactSellerModal } from './components/ContactSellerModal';
 import { ListItemModal } from './components/ListItemModal';
@@ -89,6 +91,7 @@ const MainContent: React.FC = () => {
       <Footer />
 
       {/* Global Modals & Interactive Overlays */}
+      <AuthModal />
       <ProductDetailModal />
       <ContactSellerModal />
       <ListItemModal />
@@ -108,8 +111,10 @@ const MainContent: React.FC = () => {
 
 export default function App() {
   return (
-    <CampusProvider>
-      <MainContent />
-    </CampusProvider>
+    <AuthProvider>
+      <CampusProvider>
+        <MainContent />
+      </CampusProvider>
+    </AuthProvider>
   );
 }
