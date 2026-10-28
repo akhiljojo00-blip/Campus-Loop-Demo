@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { useAuth } from './AuthContext';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { 
   Listing, 
   Category, 
@@ -8,7 +10,6 @@ import {
   WantedRequest,
   WantedOffer,
   BargainOffer,
-  OfferStatus,
   ProductReview,
   SellerProfileData,
   CoinTransaction,
@@ -44,6 +45,10 @@ interface CampusContextType {
   selectedCampusZone: string;
   setSelectedCampusZone: (zone: string) => void;
   
+  // Backend & Loading State
+  isDataLoading: boolean;
+  refreshBackendData: () => Promise<void>;
+
   // Theme Toggle (Light / Dark)
   theme: 'light' | 'dark';
   toggleTheme: () => void;
@@ -76,10 +81,10 @@ interface CampusContextType {
 
   // Feature 1: Wanted Board
   wantedRequests: WantedRequest[];
-  addWantedRequest: (reqData: Omit<WantedRequest, 'id' | 'createdAt' | 'datePosted' | 'status' | 'offers' | 'isUserRequest'>) => WantedRequest;
+  addWantedRequest: (reqData: Omit<WantedRequest, 'id' | 'createdAt' | 'datePosted' | 'status' | 'offers' | 'isUserRequest' | 'isDemoRequest'>) => Promise<WantedRequest>;
   submitWantedOffer: (requestId: string, proposedPrice: number, message: string, listingId?: string) => void;
   acceptWantedOffer: (requestId: string, offerId: string) => void;
-  markRequestFulfilled: (requestId: string) => void;
+  markRequestFulfilled: (requestId: string) => Promise<void>;
 
   // Feature 2: Bargaining & Offers
   bargainOffers: BargainOffer[];
@@ -126,9 +131,9 @@ interface CampusContextType {
   hideToast: () => void;
 
   // Core Actions
-  addListing: (newListingData: Omit<Listing, 'id' | 'timestamp' | 'dateListed' | 'isUserListing'>) => Listing;
-  deleteListing: (id: string) => void;
-  toggleSaveItem: (id: string) => void;
+  addListing: (newListingData: Omit<Listing, 'id' | 'timestamp' | 'dateListed' | 'isUserListing' | 'isDemoListing'>) => Promise<Listing>;
+  deleteListing: (id: string) => Promise<void>;
+  toggleSaveItem: (id: string) => Promise<void>;
   isItemSaved: (id: string) => boolean;
   resetDemoData: () => void;
   clearAllFilters: () => void;
@@ -168,6 +173,10 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       document.documentElement.classList.remove('dark');
     }
   }, [theme]);
+
+  // Auth state & Backend loading
+  const { user, profile } = useAuth();
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(() => isSupabaseConfigured);
 
   // Listings State
   const [listings, setListings] = useState<Listing[]>(() => {
@@ -347,6 +356,118 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const hideToast = () => setToast(null);
 
+  // Load real data from Supabase backend when configured
+  const refreshBackendData = useCallback(async () => {
+    if (!isSupabaseConfigured) return;
+    setIsDataLoading(true);
+
+    try {
+      // 1. Fetch live listings
+      const { data: remoteListings, error: listErr } = await supabase
+        .from('listings')
+        .select('*, profiles(full_name, department, campus_location)')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (listErr) {
+        console.warn('Supabase listings fetch error:', listErr.message);
+      } else if (remoteListings) {
+        if (remoteListings.length > 0) {
+          const mapped: Listing[] = remoteListings.map(row => ({
+            id: row.id,
+            title: row.title,
+            price: Number(row.price),
+            originalPrice: row.original_price ? Number(row.original_price) : undefined,
+            category: row.category,
+            condition: row.condition,
+            description: row.description,
+            sellerName: row.profiles?.full_name || 'Campus Student',
+            sellerDepartment: row.profiles?.department || '1st Year BCA',
+            sellerId: row.seller_id,
+            campusLocation: row.campus_location,
+            coordinates: row.latitude && row.longitude ? { lat: row.latitude, lng: row.longitude } : undefined,
+            dateListed: new Date(row.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+            timestamp: new Date(row.created_at).getTime(),
+            imageUrl: row.image_url,
+            isFeatured: row.is_featured,
+            isUserListing: user?.id === row.seller_id,
+            contactPreference: row.contact_preference,
+            tags: row.tags || [],
+            conditionNotes: row.condition_notes,
+            isDemoListing: false
+          }));
+          setListings(mapped);
+          if (user?.id) {
+            setUserListingIds(remoteListings.filter(r => r.seller_id === user.id).map(r => r.id));
+          }
+        } else {
+          // Empty database: show seed listings clearly tagged as demo items
+          setListings(INITIAL_SEED_LISTINGS.map(l => ({ ...l, isDemoListing: true })));
+        }
+      }
+
+      // 2. Fetch live wanted requests
+      const { data: remoteWanted, error: wantedErr } = await supabase
+        .from('wanted_requests')
+        .select('*, profiles(full_name, department, campus_location)')
+        .order('created_at', { ascending: false });
+
+      if (wantedErr) {
+        console.warn('Supabase wanted fetch error:', wantedErr.message);
+      } else if (remoteWanted) {
+        if (remoteWanted.length > 0) {
+          const mappedWanted: WantedRequest[] = remoteWanted.map(row => ({
+            id: row.id,
+            title: row.title,
+            category: row.category,
+            minBudget: Number(row.min_budget),
+            maxBudget: Number(row.max_budget),
+            desiredCondition: row.desired_condition,
+            campusLocation: row.campus_location,
+            searchRadius: row.search_radius,
+            description: row.description,
+            urgency: row.urgency,
+            expiresAt: new Date(row.expires_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+            status: row.status,
+            buyerName: row.profiles?.full_name || 'Campus Student',
+            buyerDepartment: row.profiles?.department || '1st Year BCA',
+            requesterId: row.requester_id,
+            createdAt: new Date(row.created_at).getTime(),
+            datePosted: new Date(row.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+            isHighlighted: row.is_highlighted,
+            isUserRequest: user?.id === row.requester_id,
+            isDemoRequest: false,
+            offers: []
+          }));
+          setWantedRequests(mappedWanted);
+        } else {
+          setWantedRequests(INITIAL_SEED_WANTED.map(w => ({ ...w, isDemoRequest: true })));
+        }
+      }
+
+      // 3. Fetch user's saved listings if authenticated
+      if (user?.id) {
+        const { data: savedData, error: savedErr } = await supabase
+          .from('saved_listings')
+          .select('listing_id')
+          .eq('user_id', user.id);
+
+        if (!savedErr && savedData) {
+          setSavedItemIds(savedData.map(s => s.listing_id));
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to refresh Supabase data:', err);
+    } finally {
+      setIsDataLoading(false);
+    }
+  }, [user]);
+
+  // Initial load
+  useEffect(() => {
+    refreshBackendData();
+  }, [refreshBackendData]);
+
   // Persistence to localStorage
   useEffect(() => {
     try {
@@ -491,7 +612,68 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   // Feature 1: Wanted Board Actions
-  const addWantedRequest = (reqData: Omit<WantedRequest, 'id' | 'createdAt' | 'datePosted' | 'status' | 'offers' | 'isUserRequest'>): WantedRequest => {
+  const addWantedRequest = async (
+    reqData: Omit<WantedRequest, 'id' | 'createdAt' | 'datePosted' | 'status' | 'offers' | 'isUserRequest' | 'isDemoRequest'>
+  ): Promise<WantedRequest> => {
+    if (isSupabaseConfigured && user?.id) {
+      try {
+        const { data, error } = await supabase
+          .from('wanted_requests')
+          .insert({
+            requester_id: user.id,
+            title: reqData.title,
+            category: reqData.category,
+            min_budget: reqData.minBudget,
+            max_budget: reqData.maxBudget,
+            desired_condition: reqData.desiredCondition,
+            campus_location: reqData.campusLocation,
+            search_radius: reqData.searchRadius,
+            description: reqData.description,
+            urgency: reqData.urgency,
+            is_highlighted: reqData.isHighlighted || false,
+            status: 'Open'
+          })
+          .select('*, profiles(full_name, department, campus_location)')
+          .single();
+
+        if (error) {
+          showToast('Failed to post request', error.message, 'warning');
+          throw error;
+        }
+
+        const createdReq: WantedRequest = {
+          id: data.id,
+          title: data.title,
+          category: data.category,
+          minBudget: Number(data.min_budget),
+          maxBudget: Number(data.max_budget),
+          desiredCondition: data.desired_condition,
+          campusLocation: data.campus_location,
+          searchRadius: data.search_radius,
+          description: data.description,
+          urgency: data.urgency,
+          expiresAt: new Date(data.expires_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+          status: 'Open',
+          buyerName: data.profiles?.full_name || profile?.full_name || 'You',
+          buyerDepartment: data.profiles?.department || profile?.department || '1st Year BCA',
+          requesterId: data.requester_id,
+          createdAt: new Date(data.created_at).getTime(),
+          datePosted: 'Just now',
+          isHighlighted: data.is_highlighted,
+          isUserRequest: true,
+          isDemoRequest: false,
+          offers: []
+        };
+
+        setWantedRequests(prev => [createdReq, ...prev]);
+        earnCoins(10, 'Created a Wanted Board Request');
+        showToast('Wanted Request Posted in Supabase!', `Classmates can now see your request for "${createdReq.title}".`, 'success');
+        return createdReq;
+      } catch (err: unknown) {
+        console.warn('Backend wanted request error, falling back to local state:', err);
+      }
+    }
+
     const newReq: WantedRequest = {
       ...reqData,
       id: `req-user-${Date.now()}`,
@@ -499,12 +681,13 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       datePosted: 'Just now',
       status: 'Open',
       isUserRequest: true,
+      isDemoRequest: !isSupabaseConfigured,
       offers: []
     };
 
     setWantedRequests(prev => [newReq, ...prev]);
     earnCoins(10, 'Created a Wanted Board Request');
-    showToast('Wanted Request Posted', `Classmates can now see your request for "${newReq.title}".`, 'success');
+    showToast('Wanted Request Posted (Demo)', `Classmates can now see your request for "${newReq.title}".`, 'success');
     return newReq;
   };
 
@@ -554,7 +737,19 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     showToast('Offer Accepted!', 'Deal agreed! You can now meet on campus for exchange.', 'success');
   };
 
-  const markRequestFulfilled = (requestId: string) => {
+  const markRequestFulfilled = async (requestId: string): Promise<void> => {
+    if (isSupabaseConfigured && user?.id) {
+      try {
+        await supabase
+          .from('wanted_requests')
+          .update({ status: 'Fulfilled' })
+          .eq('id', requestId)
+          .eq('requester_id', user.id);
+      } catch (e) {
+        console.warn('Error updating wanted request status in Supabase:', e);
+      }
+    }
+
     setWantedRequests(prev => prev.map(req => req.id === requestId ? { ...req, status: 'Fulfilled' } : req));
     showToast('Request Marked Fulfilled', 'Moved to fulfilled requests archive.', 'info');
   };
@@ -762,7 +957,73 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   // Standard Listings actions
-  const addListing = (newListingData: Omit<Listing, 'id' | 'timestamp' | 'dateListed' | 'isUserListing'>) => {
+  const addListing = async (
+    newListingData: Omit<Listing, 'id' | 'timestamp' | 'dateListed' | 'isUserListing' | 'isDemoListing'>
+  ): Promise<Listing> => {
+    if (isSupabaseConfigured && user?.id) {
+      try {
+        const { data, error } = await supabase
+          .from('listings')
+          .insert({
+            seller_id: user.id,
+            title: newListingData.title,
+            description: newListingData.description,
+            category: newListingData.category,
+            condition: newListingData.condition,
+            price: newListingData.price,
+            original_price: newListingData.originalPrice,
+            contact_preference: newListingData.contactPreference,
+            campus_location: newListingData.campusLocation,
+            latitude: newListingData.coordinates?.lat,
+            longitude: newListingData.coordinates?.lng,
+            image_url: newListingData.imageUrl,
+            tags: newListingData.tags,
+            condition_notes: newListingData.conditionNotes,
+            is_featured: newListingData.isFeatured || false,
+            status: 'active'
+          })
+          .select('*, profiles(full_name, department, campus_location)')
+          .single();
+
+        if (error) {
+          showToast('Failed to create listing', error.message, 'warning');
+          throw error;
+        }
+
+        const createdListing: Listing = {
+          id: data.id,
+          title: data.title,
+          price: Number(data.price),
+          originalPrice: data.original_price ? Number(data.original_price) : undefined,
+          category: data.category,
+          condition: data.condition,
+          description: data.description,
+          sellerName: data.profiles?.full_name || profile?.full_name || 'You',
+          sellerDepartment: data.profiles?.department || profile?.department || '1st Year BCA',
+          sellerId: data.seller_id,
+          campusLocation: data.campus_location,
+          coordinates: data.latitude && data.longitude ? { lat: data.latitude, lng: data.longitude } : undefined,
+          dateListed: 'Just now',
+          timestamp: new Date(data.created_at).getTime(),
+          imageUrl: data.image_url,
+          isFeatured: data.is_featured,
+          isUserListing: true,
+          contactPreference: data.contact_preference,
+          tags: data.tags || [],
+          conditionNotes: data.condition_notes,
+          isDemoListing: false
+        };
+
+        setListings(prev => [createdListing, ...prev]);
+        setUserListingIds(prev => [createdListing.id, ...prev]);
+        earnCoins(15, 'Created a New Listing');
+        showToast('Listing Created in Supabase!', `"${createdListing.title}" is now live on campus.`, 'success');
+        return createdListing;
+      } catch (err: unknown) {
+        console.warn('Backend listing creation error, falling back to local state:', err);
+      }
+    }
+
     const newId = `user-listing-${Date.now()}`;
     const newListing: Listing = {
       ...newListingData,
@@ -771,16 +1032,34 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       dateListed: 'Just now',
       isUserListing: true,
       isFeatured: false,
+      isDemoListing: !isSupabaseConfigured
     };
 
     setListings(prev => [newListing, ...prev]);
     setUserListingIds(prev => [newId, ...prev]);
     earnCoins(15, 'Created a New Listing');
-    showToast('Listing Created!', `"${newListing.title}" is now visible in the marketplace.`, 'success');
+    showToast('Listing Created (Demo)', `"${newListing.title}" is saved locally.`, 'success');
     return newListing;
   };
 
-  const deleteListing = (id: string) => {
+  const deleteListing = async (id: string): Promise<void> => {
+    if (isSupabaseConfigured && user?.id) {
+      try {
+        const { error } = await supabase
+          .from('listings')
+          .delete()
+          .eq('id', id)
+          .eq('seller_id', user.id);
+
+        if (error) {
+          showToast('Could not delete listing', error.message, 'warning');
+          return;
+        }
+      } catch (e) {
+        console.warn('Error deleting listing from Supabase:', e);
+      }
+    }
+
     const itemToDelete = listings.find(item => item.id === id);
     setListings(prev => prev.filter(item => item.id !== id));
     setUserListingIds(prev => prev.filter(item => item !== id));
@@ -788,12 +1067,32 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (selectedProduct?.id === id) {
       setSelectedProduct(null);
     }
-    showToast('Listing Removed', `"${itemToDelete?.title || 'Item'}" was removed from the demo.`, 'info');
+    showToast('Listing Removed', `"${itemToDelete?.title || 'Item'}" was removed.`, 'info');
   };
 
-  const toggleSaveItem = (id: string) => {
+  const toggleSaveItem = async (id: string): Promise<void> => {
+    const isCurrentlySaved = savedItemIds.includes(id);
+
+    if (isSupabaseConfigured && user?.id) {
+      try {
+        if (isCurrentlySaved) {
+          await supabase
+            .from('saved_listings')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('listing_id', id);
+        } else {
+          await supabase
+            .from('saved_listings')
+            .insert({ user_id: user.id, listing_id: id });
+        }
+      } catch (e) {
+        console.warn('Error syncing bookmark with Supabase:', e);
+      }
+    }
+
     const item = listings.find(i => i.id === id);
-    if (savedItemIds.includes(id)) {
+    if (isCurrentlySaved) {
       setSavedItemIds(prev => prev.filter(itemId => itemId !== id));
       showToast('Removed from Saved', `"${item?.title || 'Item'}" removed from your saved list.`, 'info');
     } else {
@@ -880,6 +1179,8 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setSelectedSort,
         selectedCampusZone,
         setSelectedCampusZone,
+        isDataLoading,
+        refreshBackendData,
         theme,
         toggleTheme,
         isListItemModalOpen,

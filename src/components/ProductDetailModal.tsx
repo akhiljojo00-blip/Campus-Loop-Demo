@@ -102,9 +102,17 @@ export const ProductDetailModal: React.FC = () => {
                     <Sparkles className="w-3 h-3 text-amber-300" /> Featured
                   </span>
                 )}
-                {selectedProduct.isUserListing && (
+                {selectedProduct.isUserListing ? (
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#BA4E29] text-white text-[10px] font-bold tracking-wide uppercase shadow-xs">
-                    Demo listing
+                    Your Listing
+                  </span>
+                ) : selectedProduct.isDemoListing ? (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 text-[10px] font-medium tracking-wide border border-stone-300/70 dark:border-stone-700">
+                    Demo Sample
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-700 text-white text-[10px] font-bold tracking-wide uppercase shadow-xs">
+                    <ShieldCheck className="w-3 h-3" /> Live Campus
                   </span>
                 )}
               </div>

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCampus } from '../context/CampusContext';
+import { useAuth } from '../context/AuthContext';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { 
   X, 
   Upload, 
@@ -11,7 +13,8 @@ import {
   User, 
   ArrowRight,
   Info,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { Category, Condition, ContactPreference, Listing } from '../types';
 import { SAMPLE_PRESET_IMAGES } from '../data/seedListings';
@@ -22,8 +25,11 @@ export const ListItemModal: React.FC = () => {
     setIsListItemModalOpen, 
     addListing, 
     setSelectedProduct,
-    setActiveTab 
+    setActiveTab,
+    showToast
   } = useCampus();
+
+  const { user, profile } = useAuth();
 
   // Form states
   const [title, setTitle] = useState('');
@@ -33,11 +39,21 @@ export const ListItemModal: React.FC = () => {
   const [condition, setCondition] = useState<Condition>('Good condition');
   const [description, setDescription] = useState('');
   const [conditionNotes, setConditionNotes] = useState('');
-  const [sellerName, setSellerName] = useState('');
-  const [sellerDepartment, setSellerDepartment] = useState('1st Year BCA');
-  const [campusLocation, setCampusLocation] = useState('Central Library Lobby');
+  const [sellerName, setSellerName] = useState(profile?.full_name || '');
+  const [sellerDepartment, setSellerDepartment] = useState(profile?.department || '1st Year BCA');
+  const [campusLocation, setCampusLocation] = useState(profile?.campus_location || 'Central Library Lobby');
   const [contactPreference, setContactPreference] = useState<ContactPreference>('Campus Chat');
   const [imageUrl, setImageUrl] = useState(SAMPLE_PRESET_IMAGES[0].url);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Sync profile details when available
+  useEffect(() => {
+    if (profile) {
+      if (profile.full_name) setSellerName(profile.full_name);
+      if (profile.department) setSellerDepartment(profile.department);
+      if (profile.campus_location) setCampusLocation(profile.campus_location);
+    }
+  }, [profile]);
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -87,14 +103,65 @@ export const ListItemModal: React.FC = () => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('File Too Large', 'Please select an image smaller than 5MB.', 'warning');
+      return;
+    }
+
+    if (isSupabaseConfigured && user?.id) {
+      setIsUploadingImage(true);
+      try {
+        const fileExt = file.name.split('.').pop() || 'jpg';
+        const cleanName = `${Date.now()}_item.${fileExt}`;
+        const filePath = `${user.id}/${cleanName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('listing-images')
+          .upload(filePath, file, { contentType: file.type, upsert: true });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: pubData } = supabase.storage
+          .from('listing-images')
+          .getPublicUrl(filePath);
+
+        if (pubData?.publicUrl) {
+          setImageUrl(pubData.publicUrl);
+          showToast('Photo Uploaded!', 'Product image stored in Supabase Storage.', 'success');
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Upload failed';
+        showToast('Image Upload Error', msg, 'warning');
+      } finally {
+        setIsUploadingImage(false);
+      }
+    } else {
+      // Local preview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setImageUrl(event.target.result as string);
+          showToast('Image Selected', 'Photo loaded locally for preview.', 'info');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const newListing = addListing({
+    try {
+      const newListing = await addListing({
         title: title.trim(),
         price: Number(price),
         originalPrice: originalPrice ? Number(originalPrice) : undefined,
@@ -112,7 +179,10 @@ export const ListItemModal: React.FC = () => {
 
       setIsSubmitting(false);
       setCreatedListing(newListing);
-    }, 400);
+    } catch (err) {
+      console.error('Failed to add listing:', err);
+      setIsSubmitting(false);
+    }
   };
 
   const handleResetForm = () => {
@@ -387,13 +457,35 @@ export const ListItemModal: React.FC = () => {
                       }}
                     />
                   </div>
-                  <input
-                    type="text"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="Or paste any custom image URL"
-                    className="flex-1 py-2 px-3 rounded-xl border border-stone-200 text-xs text-stone-800 bg-white focus:border-[#153225] outline-none"
-                  />
+                  <div className="flex-1 space-y-1.5">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 hover:bg-stone-50 text-xs font-semibold text-stone-700 transition-colors cursor-pointer">
+                      {isUploadingImage ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                          <span>Uploading to Supabase...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Upload Real Photo (Supabase Storage)</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        disabled={isUploadingImage}
+                        onChange={handleImageFileChange}
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="Or paste image URL"
+                      className="w-full py-1.5 px-3 rounded-xl border border-stone-200 text-xs text-stone-800 bg-white focus:border-[#153225] outline-none"
+                    />
+                  </div>
                 </div>
               </div>
 

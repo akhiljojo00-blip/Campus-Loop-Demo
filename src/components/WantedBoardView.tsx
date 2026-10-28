@@ -351,9 +351,17 @@ export const WantedBoardView: React.FC = () => {
                           <Flame className="w-3 h-3" /> Pinned
                         </span>
                       )}
-                      {req.isUserRequest && (
+                      {req.isUserRequest ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#BA4E29] text-white text-[10px] font-bold uppercase tracking-wider shadow-xs">
                           Your Request
+                        </span>
+                      ) : req.isDemoRequest ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 text-[10px] font-medium tracking-wide border border-stone-300/70 dark:border-stone-700">
+                          Demo Sample
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-wider shadow-xs">
+                          Live Request
                         </span>
                       )}
                       <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300 bg-[#E1EDE5] dark:bg-emerald-950/80 px-2 py-0.5 rounded-md">

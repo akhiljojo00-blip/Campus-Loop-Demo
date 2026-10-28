@@ -47,6 +47,7 @@ export interface Listing {
   conditionNotes?: string;
   isBoosted?: boolean;
   boostExpiresAt?: number;
+  isDemoListing?: boolean;
 }
 
 // Feature 1: Wanted Board
@@ -85,6 +86,8 @@ export interface WantedRequest {
   datePosted: string;
   isHighlighted?: boolean;
   isUserRequest?: boolean;
+  isDemoRequest?: boolean;
+  requesterId?: string;
   offers: WantedOffer[];
 }
 

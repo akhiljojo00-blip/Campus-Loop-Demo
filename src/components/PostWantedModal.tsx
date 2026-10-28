@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCampus } from '../context/CampusContext';
+import { useAuth } from '../context/AuthContext';
 import { 
   X, 
   Sparkles, 
@@ -9,7 +10,8 @@ import {
   ArrowRight, 
   Info,
   Clock,
-  Coins
+  Coins,
+  Loader2
 } from 'lucide-react';
 import { Category, WantedUrgency } from '../types';
 
@@ -23,19 +25,29 @@ export const PostWantedModal: React.FC = () => {
     showToast
   } = useCampus();
 
+  const { profile } = useAuth();
+
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<Category>('Textbooks');
   const [minBudget, setMinBudget] = useState('150');
   const [maxBudget, setMaxBudget] = useState('300');
   const [desiredCondition, setDesiredCondition] = useState<'Like New' | 'Good condition' | 'Any condition'>('Good condition');
-  const [campusLocation, setCampusLocation] = useState('Central Library Steps');
+  const [campusLocation, setCampusLocation] = useState(profile?.campus_location || 'Central Library Steps');
   const [searchRadius, setSearchRadius] = useState('Within 500m / Campus Only');
   const [urgency, setUrgency] = useState<WantedUrgency>('Within a week');
   const [expiresAt, setExpiresAt] = useState('In 7 days');
   const [description, setDescription] = useState('');
-  const [buyerName, setBuyerName] = useState('Akhil (You)');
-  const [buyerDepartment, setBuyerDepartment] = useState('1st Year BCA');
+  const [buyerName, setBuyerName] = useState(profile?.full_name || 'Akhil (You)');
+  const [buyerDepartment, setBuyerDepartment] = useState(profile?.department || '1st Year BCA');
   const [boostWithCoins, setBoostWithCoins] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      if (profile.full_name) setBuyerName(profile.full_name);
+      if (profile.department) setBuyerDepartment(profile.department);
+      if (profile.campus_location) setCampusLocation(profile.campus_location);
+    }
+  }, [profile]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,7 +83,7 @@ export const PostWantedModal: React.FC = () => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -81,8 +93,8 @@ export const PostWantedModal: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      const newReq = addWantedRequest({
+    try {
+      const newReq = await addWantedRequest({
         title: title.trim(),
         category,
         minBudget: Number(minBudget),
@@ -98,13 +110,16 @@ export const PostWantedModal: React.FC = () => {
         isHighlighted: boostWithCoins
       });
 
-      if (boostWithCoins) {
+      if (boostWithCoins && newReq?.id) {
         highlightWantedRequest(newReq.id, 25);
       }
 
       setIsSubmitting(false);
       setIsPostWantedModalOpen(false);
-    }, 400);
+    } catch (err) {
+      console.error('Error adding wanted request:', err);
+      setIsSubmitting(false);
+    }
   };
 
   return (
