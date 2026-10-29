@@ -187,6 +187,9 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     try {
       const stored = localStorage.getItem(STORAGE_KEY_THEME);
       if (stored === 'dark' || stored === 'light') return stored;
+      if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
     } catch (e) {
       console.warn('Failed reading theme preference', e);
     }
@@ -208,8 +211,10 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
     } else {
       document.documentElement.classList.remove('dark');
+      document.documentElement.style.colorScheme = 'light';
     }
   }, [theme]);
 

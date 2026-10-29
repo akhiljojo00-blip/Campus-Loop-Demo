@@ -242,11 +242,11 @@ export const ListItemModal: React.FC = () => {
       onClick={handleClose}
     >
       <div 
-        className="relative w-full max-w-2xl bg-white rounded-3xl border border-[#E7E3DC] shadow-warm-lg overflow-hidden my-auto animate-in zoom-in-95 duration-150"
+        className="relative w-full max-w-2xl bg-white dark:bg-[#14231D] text-stone-900 dark:text-stone-100 rounded-3xl border border-[#E7E3DC] dark:border-emerald-900/60 shadow-warm-lg overflow-hidden my-auto animate-in zoom-in-95 duration-150 transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 sm:p-5 bg-[#153225] text-white flex items-center justify-between">
+        <div className="p-4 sm:p-5 bg-[#153225] dark:bg-[#0D1C15] text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-emerald-300">
               <Tag className="w-4 h-4" />
@@ -276,25 +276,25 @@ export const ListItemModal: React.FC = () => {
           {createdListing ? (
             /* Success Confirmation State */
             <div className="text-center py-6 sm:py-8">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-4 animate-in zoom-in duration-300">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center mx-auto mb-4 animate-in zoom-in duration-300">
                 <CheckCircle2 className="w-10 h-10" />
               </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-full">
                 Listing Published (Demo Session)
               </span>
-              <h3 className="font-serif font-bold text-2xl text-stone-900 mt-3 mb-2">
+              <h3 className="font-serif font-bold text-2xl text-stone-900 dark:text-stone-100 mt-3 mb-2">
                 "{createdListing.title}" is Live!
               </h3>
-              <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto leading-relaxed mb-6">
+              <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 max-w-md mx-auto leading-relaxed mb-6">
                 Your listing has been saved to your browser’s localStorage and added to the top of the Campus Marketplace with a <strong>Demo Listing</strong> badge.
               </p>
 
-              <div className="p-3.5 bg-[#FAF8F5] rounded-2xl border border-stone-200 max-w-sm mx-auto mb-8 text-left text-xs">
-                <div className="flex justify-between font-semibold text-stone-800 mb-1">
+              <div className="p-3.5 bg-[#FAF8F5] dark:bg-stone-900/80 rounded-2xl border border-stone-200 dark:border-emerald-900/40 max-w-sm mx-auto mb-8 text-left text-xs">
+                <div className="flex justify-between font-semibold text-stone-800 dark:text-stone-200 mb-1">
                   <span>Price: ₹{createdListing.price}</span>
-                  <span className="text-emerald-800">{createdListing.category}</span>
+                  <span className="text-emerald-800 dark:text-emerald-400">{createdListing.category}</span>
                 </div>
-                <p className="text-stone-500 text-[11px]">
+                <p className="text-stone-500 dark:text-stone-400 text-[11px]">
                   Pickup location: {createdListing.campusLocation}
                 </p>
               </div>
@@ -306,7 +306,7 @@ export const ListItemModal: React.FC = () => {
                     setIsListItemModalOpen(false);
                     handleResetForm();
                   }}
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#153225] text-white text-xs font-bold hover:bg-[#1E4333] transition-colors cursor-pointer"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#153225] dark:bg-emerald-700 text-white text-xs font-bold hover:bg-[#1E4333] transition-colors cursor-pointer"
                 >
                   View My Listing
                 </button>
@@ -317,7 +317,7 @@ export const ListItemModal: React.FC = () => {
                     setIsListItemModalOpen(false);
                     handleResetForm();
                   }}
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-stone-300 text-stone-700 text-xs font-bold hover:bg-stone-50 transition-colors cursor-pointer"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-xs font-bold hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors cursor-pointer"
                 >
                   Back to Marketplace
                 </button>
@@ -328,7 +328,7 @@ export const ListItemModal: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-5">
               
               {/* Subtle prototype notice */}
-              <div className="p-3 rounded-xl bg-[#F5F2EB] border border-[#DDD2C4] flex items-center gap-2.5 text-xs text-stone-600">
+              <div className="p-3 rounded-xl bg-[#F5F2EB] dark:bg-stone-900/80 border border-[#DDD2C4] dark:border-emerald-900/40 flex items-center gap-2.5 text-xs text-stone-600 dark:text-stone-300">
                 <Info className="w-4 h-4 text-[#BA4E29] shrink-0" />
                 <span>
                   Demo Mode: This listing is saved locally in your browser to demonstrate the campus product flow.
@@ -337,7 +337,7 @@ export const ListItemModal: React.FC = () => {
 
               {/* Title Input */}
               <div>
-                <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wide mb-1">
                   Item Title *
                 </label>
                 <input
@@ -345,8 +345,8 @@ export const ListItemModal: React.FC = () => {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Higher Engineering Mathematics by B.S. Grewal"
-                  className={`w-full py-2.5 px-3.5 rounded-xl border text-xs sm:text-sm text-stone-900 bg-white focus:outline-none transition-all ${
-                    errors.title ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-stone-200 focus:border-[#153225]'
+                  className={`w-full py-2.5 px-3.5 rounded-xl border text-xs sm:text-sm text-stone-900 dark:text-stone-100 bg-white dark:bg-stone-900 focus:outline-none transition-all ${
+                    errors.title ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-stone-200 dark:border-emerald-900/80 focus:border-[#153225] dark:focus:border-emerald-500'
                   }`}
                   maxLength={70}
                 />
@@ -359,13 +359,13 @@ export const ListItemModal: React.FC = () => {
               {/* Category & Condition Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide mb-1">
+                  <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wide mb-1">
                     Category *
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as Category)}
-                    className="w-full py-2.5 px-3 rounded-xl border border-stone-200 text-xs sm:text-sm text-stone-900 bg-white focus:border-[#153225] outline-none cursor-pointer"
+                    className="w-full py-2.5 px-3 rounded-xl border border-stone-200 dark:border-emerald-900/80 text-xs sm:text-sm text-stone-900 dark:text-stone-100 bg-white dark:bg-stone-900 focus:border-[#153225] dark:focus:border-emerald-500 outline-none cursor-pointer"
                   >
                     <option value="Textbooks">Textbooks</option>
                     <option value="Electronics">Electronics</option>
@@ -378,13 +378,13 @@ export const ListItemModal: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide mb-1">
+                  <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wide mb-1">
                     Condition *
                   </label>
                   <select
                     value={condition}
                     onChange={(e) => setCondition(e.target.value as Condition)}
-                    className="w-full py-2.5 px-3 rounded-xl border border-stone-200 text-xs sm:text-sm text-stone-900 bg-white focus:border-[#153225] outline-none cursor-pointer"
+                    className="w-full py-2.5 px-3 rounded-xl border border-stone-200 dark:border-emerald-900/80 text-xs sm:text-sm text-stone-900 dark:text-stone-100 bg-white dark:bg-stone-900 focus:border-[#153225] dark:focus:border-emerald-500 outline-none cursor-pointer"
                   >
                     <option value="Like New">Like New (Mint)</option>
                     <option value="Good condition">Good condition (Standard wear)</option>
@@ -396,11 +396,11 @@ export const ListItemModal: React.FC = () => {
               {/* Price & Original Price */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide mb-1">
+                  <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wide mb-1">
                     Your Price in ₹ *
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-stone-500 font-bold text-sm">
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-stone-500 dark:text-stone-400 font-bold text-sm">
                       ₹
                     </span>
                     <input
@@ -408,8 +408,8 @@ export const ListItemModal: React.FC = () => {
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
                       placeholder="e.g. 180"
-                      className={`w-full pl-8 pr-3.5 py-2.5 rounded-xl border text-xs sm:text-sm text-stone-900 bg-white focus:outline-none ${
-                        errors.price ? 'border-red-500' : 'border-stone-200 focus:border-[#153225]'
+                      className={`w-full pl-8 pr-3.5 py-2.5 rounded-xl border text-xs sm:text-sm text-stone-900 dark:text-stone-100 bg-white dark:bg-stone-900 focus:outline-none ${
+                        errors.price ? 'border-red-500' : 'border-stone-200 dark:border-emerald-900/80 focus:border-[#153225] dark:focus:border-emerald-500'
                       }`}
                       min={1}
                     />
@@ -418,7 +418,7 @@ export const ListItemModal: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide mb-1">
+                  <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wide mb-1">
                     Original Retail Price in ₹ (Optional)
                   </label>
                   <div className="relative">
@@ -430,7 +430,7 @@ export const ListItemModal: React.FC = () => {
                       value={originalPrice}
                       onChange={(e) => setOriginalPrice(e.target.value)}
                       placeholder="e.g. 650 (shows savings)"
-                      className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-stone-200 text-xs sm:text-sm text-stone-900 bg-white focus:border-[#153225] outline-none"
+                      className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-emerald-900/80 text-xs sm:text-sm text-stone-900 dark:text-stone-100 bg-white dark:bg-stone-900 focus:border-[#153225] dark:focus:border-emerald-500 outline-none"
                       min={1}
                     />
                   </div>
@@ -440,7 +440,7 @@ export const ListItemModal: React.FC = () => {
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wide mb-1">
                   Item Description *
                 </label>
                 <textarea
@@ -448,8 +448,8 @@ export const ListItemModal: React.FC = () => {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Mention edition, semester syllabus relevance, whether CD/accessories are included, and general condition."
                   rows={3}
-                  className={`w-full py-2.5 px-3.5 rounded-xl border text-xs sm:text-sm text-stone-900 bg-white focus:outline-none ${
-                    errors.description ? 'border-red-500' : 'border-stone-200 focus:border-[#153225]'
+                  className={`w-full py-2.5 px-3.5 rounded-xl border text-xs sm:text-sm text-stone-900 dark:text-stone-100 bg-white dark:bg-stone-900 focus:outline-none ${
+                    errors.description ? 'border-red-500' : 'border-stone-200 dark:border-emerald-900/80 focus:border-[#153225] dark:focus:border-emerald-500'
                   }`}
                   maxLength={500}
                 />
@@ -461,11 +461,11 @@ export const ListItemModal: React.FC = () => {
 
               {/* Photo Selector with 6 presets */}
               <div>
-                <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide mb-1.5">
+                <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wide mb-1.5">
                   Item Photo
                 </label>
                 <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1 scrollbar-none">
-                  <span className="text-[11px] text-stone-500 shrink-0 font-medium">Click Preset:</span>
+                  <span className="text-[11px] text-stone-500 dark:text-stone-400 shrink-0 font-medium">Click Preset:</span>
                   {SAMPLE_PRESET_IMAGES.map((preset) => (
                     <button
                       type="button"
@@ -473,8 +473,8 @@ export const ListItemModal: React.FC = () => {
                       onClick={() => setImageUrl(preset.url)}
                       className={`text-[11px] px-2.5 py-1 rounded-lg border shrink-0 transition-colors cursor-pointer ${
                         imageUrl === preset.url
-                          ? 'bg-[#153225] text-white border-[#153225]'
-                          : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                          ? 'bg-[#153225] dark:bg-emerald-700 text-white border-[#153225] dark:border-emerald-600'
+                          : 'bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700'
                       }`}
                     >
                       {preset.label}
@@ -483,7 +483,7 @@ export const ListItemModal: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-stone-100 border border-stone-200 shrink-0">
+                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shrink-0">
                     <img 
                       src={imageUrl} 
                       alt="Preview" 
@@ -494,15 +494,15 @@ export const ListItemModal: React.FC = () => {
                     />
                   </div>
                   <div className="flex-1 space-y-1.5">
-                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 hover:bg-stone-50 text-xs font-semibold text-stone-700 transition-colors cursor-pointer">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 text-xs font-semibold text-stone-700 dark:text-stone-300 transition-colors cursor-pointer">
                       {isUploadingImage ? (
                         <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600 dark:text-emerald-400" />
                           <span>Uploading to Supabase...</span>
                         </>
                       ) : (
                         <>
-                          <Upload className="w-3.5 h-3.5 text-emerald-700" />
+                          <Upload className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
                           <span>Upload Real Photo (Supabase Storage)</span>
                         </>
                       )}
@@ -519,16 +519,16 @@ export const ListItemModal: React.FC = () => {
                       value={imageUrl}
                       onChange={(e) => setImageUrl(e.target.value)}
                       placeholder="Or paste image URL"
-                      className="w-full py-1.5 px-3 rounded-xl border border-stone-200 text-xs text-stone-800 bg-white focus:border-[#153225] outline-none"
+                      className="w-full py-1.5 px-3 rounded-xl border border-stone-200 dark:border-emerald-900/80 text-xs text-stone-800 dark:text-stone-200 bg-white dark:bg-stone-900 focus:border-[#153225] dark:focus:border-emerald-500 outline-none"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Seller details */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2 border-t border-stone-100">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2 border-t border-stone-100 dark:border-stone-800">
                 <div>
-                  <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide mb-1">
+                  <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wide mb-1">
                     Your Name *
                   </label>
                   <input
@@ -536,13 +536,13 @@ export const ListItemModal: React.FC = () => {
                     value={sellerName}
                     onChange={(e) => setSellerName(e.target.value)}
                     placeholder="e.g. Rohan V."
-                    className="w-full py-2 px-3 rounded-xl border border-stone-200 text-xs text-stone-900 bg-white focus:border-[#153225] outline-none"
+                    className="w-full py-2 px-3 rounded-xl border border-stone-200 dark:border-emerald-900/80 text-xs text-stone-900 dark:text-stone-100 bg-white dark:bg-stone-900 focus:border-[#153225] dark:focus:border-emerald-500 outline-none"
                   />
                   {errors.sellerName && <p className="text-[10px] text-red-600 mt-0.5">{errors.sellerName}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide mb-1">
+                  <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wide mb-1">
                     Department / Year
                   </label>
                   <input
@@ -550,18 +550,18 @@ export const ListItemModal: React.FC = () => {
                     value={sellerDepartment}
                     onChange={(e) => setSellerDepartment(e.target.value)}
                     placeholder="e.g. 1st Year BCA"
-                    className="w-full py-2 px-3 rounded-xl border border-stone-200 text-xs text-stone-900 bg-white focus:border-[#153225] outline-none"
+                    className="w-full py-2 px-3 rounded-xl border border-stone-200 dark:border-emerald-900/80 text-xs text-stone-900 dark:text-stone-100 bg-white dark:bg-stone-900 focus:border-[#153225] dark:focus:border-emerald-500 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide mb-1">
+                  <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wide mb-1">
                     Campus Pickup Landmark *
                   </label>
                   <select
                     value={selectedLandmarkId}
                     onChange={(e) => handleLandmarkChange(e.target.value)}
-                    className="w-full py-2 px-3 rounded-xl border border-stone-200 text-xs text-stone-900 bg-white focus:border-[#153225] outline-none cursor-pointer mb-1.5"
+                    className="w-full py-2 px-3 rounded-xl border border-stone-200 dark:border-emerald-900/80 text-xs text-stone-900 dark:text-stone-100 bg-white dark:bg-stone-900 focus:border-[#153225] dark:focus:border-emerald-500 outline-none cursor-pointer mb-1.5"
                   >
                     {CAMPUS_LANDMARKS.map(lm => (
                       <option key={lm.id} value={lm.id}>
@@ -576,16 +576,16 @@ export const ListItemModal: React.FC = () => {
                       value={campusLocation}
                       onChange={(e) => setCampusLocation(e.target.value)}
                       placeholder="Specific spot (e.g. 1st Floor Lobby)"
-                      className="flex-1 py-1.5 px-2.5 rounded-xl border border-stone-200 text-xs text-stone-900 bg-white focus:border-[#153225] outline-none"
+                      className="flex-1 py-1.5 px-2.5 rounded-xl border border-stone-200 dark:border-emerald-900/80 text-xs text-stone-900 dark:text-stone-100 bg-white dark:bg-stone-900 focus:border-[#153225] dark:focus:border-emerald-500 outline-none"
                     />
                     <button
                       type="button"
                       onClick={handleUseGPSLocation}
                       disabled={isLocating}
-                      className="px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
                       title="Capture current campus GPS spot"
                     >
-                      <Navigation className="w-3.5 h-3.5 text-emerald-600" />
+                      <Navigation className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>{isLocating ? 'Locating...' : 'GPS'}</span>
                     </button>
                   </div>
@@ -594,8 +594,8 @@ export const ListItemModal: React.FC = () => {
               </div>
 
               {/* Location Privacy Note */}
-              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900 flex items-start gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+              <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/60 text-[11px] text-emerald-900 dark:text-emerald-200 flex items-start gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <span>
                   <strong>Location Privacy:</strong> Exact hostel room numbers or private GPS coordinates are never made public. Peers only see the landmark zone and approximate walking distance.
                 </span>
@@ -603,7 +603,7 @@ export const ListItemModal: React.FC = () => {
 
               {/* Contact preference */}
               <div>
-                <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wide mb-1">
                   Exchange Contact Preference
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -614,8 +614,8 @@ export const ListItemModal: React.FC = () => {
                       onClick={() => setContactPreference(pref)}
                       className={`text-xs px-3 py-1.5 rounded-xl border font-medium transition-colors cursor-pointer ${
                         contactPreference === pref
-                          ? 'bg-[#153225] text-white border-[#153225]'
-                          : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
+                          ? 'bg-[#153225] dark:bg-emerald-700 text-white border-[#153225] dark:border-emerald-600'
+                          : 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800'
                       }`}
                     >
                       {pref}
@@ -625,11 +625,11 @@ export const ListItemModal: React.FC = () => {
               </div>
 
               {/* Submit Buttons */}
-              <div className="pt-4 border-t border-stone-100 flex items-center justify-end gap-3">
+              <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2.5 rounded-xl border border-stone-300 text-stone-700 text-xs font-bold hover:bg-stone-50 transition-colors cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-xs font-bold hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -637,7 +637,7 @@ export const ListItemModal: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 rounded-xl bg-[#153225] hover:bg-[#1E4333] text-white text-xs font-bold shadow-warm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-[#153225] hover:bg-[#1E4333] dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white text-xs font-bold shadow-warm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span>Publishing to Campus Loop...</span>

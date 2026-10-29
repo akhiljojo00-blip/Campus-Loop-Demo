@@ -491,6 +491,24 @@ export const Navbar: React.FC = () => {
               <span>Category Match Preferences</span>
             </button>
 
+            {/* Mobile Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                {theme === 'dark' ? (
+                  <Sun className="w-4 h-4 text-amber-300" />
+                ) : (
+                  <Moon className="w-4 h-4 text-stone-600" />
+                )}
+                <span>Theme: {theme === 'dark' ? 'Dark Mode' : 'Light Ivory'}</span>
+              </div>
+              <span className="text-[11px] px-2 py-0.5 rounded-md bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-200 font-bold uppercase">
+                {theme}
+              </span>
+            </button>
+
             <div className="h-px bg-stone-200 dark:bg-stone-800 my-2" />
 
             {/* Mobile Auth button */}

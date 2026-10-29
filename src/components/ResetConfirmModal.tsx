@@ -13,25 +13,25 @@ export const ResetConfirmModal: React.FC = () => {
       onClick={() => setIsResetConfirmOpen(false)}
     >
       <div 
-        className="relative w-full max-w-sm bg-white rounded-3xl border border-[#E7E3DC] shadow-warm-lg overflow-hidden p-5 sm:p-6 text-center animate-in zoom-in-95 duration-150"
+        className="relative w-full max-w-sm bg-white dark:bg-[#14231D] text-stone-900 dark:text-stone-100 rounded-3xl border border-[#E7E3DC] dark:border-emerald-900/60 shadow-warm-lg overflow-hidden p-5 sm:p-6 text-center animate-in zoom-in-95 duration-150 transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+        <div className="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto mb-4">
           <RotateCcw className="w-6 h-6" />
         </div>
 
-        <h3 className="font-serif font-bold text-lg text-stone-900 mb-1.5">
+        <h3 className="font-serif font-bold text-lg text-stone-900 dark:text-stone-100 mb-1.5">
           Reset Demo Data?
         </h3>
 
-        <p className="text-xs text-stone-600 leading-relaxed mb-6">
+        <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed mb-6">
           This will restore the 14 original sample seed products and clear your browser’s custom demo listings. This action cannot be undone.
         </p>
 
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsResetConfirmOpen(false)}
-            className="flex-1 py-2.5 px-3 rounded-xl border border-stone-300 text-stone-700 text-xs font-bold hover:bg-stone-50 transition-colors cursor-pointer"
+            className="flex-1 py-2.5 px-3 rounded-xl border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-xs font-bold hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors cursor-pointer"
           >
             Cancel
           </button>
