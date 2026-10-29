@@ -10,6 +10,8 @@ import {
   WantedRequest,
   WantedOffer,
   BargainOffer,
+  OfferStatus,
+  ExchangeRecord,
   ProductReview,
   SellerProfileData,
   CoinTransaction,
@@ -88,10 +90,12 @@ interface CampusContextType {
 
   // Feature 2: Bargaining & Offers
   bargainOffers: BargainOffer[];
-  makeOffer: (listingId: string, offeredPrice: number, message: string) => BargainOffer;
-  respondToOffer: (offerId: string, action: 'accept' | 'reject' | 'counter', counterPrice?: number, message?: string) => void;
-  cancelOffer: (offerId: string) => void;
+  exchanges: ExchangeRecord[];
+  makeOffer: (listingId: string, offeredPrice: number, message: string) => Promise<BargainOffer | null>;
+  respondToOffer: (offerId: string, action: 'accept' | 'reject' | 'counter', counterPrice?: number, message?: string) => Promise<void>;
+  cancelOffer: (offerId: string) => Promise<void>;
   getOfferForListing: (listingId: string) => BargainOffer | undefined;
+  confirmExchange: (exchangeId: string) => Promise<void>;
 
   // Feature 3: Ratings & Reviews
   reviews: ProductReview[];
@@ -255,6 +259,9 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
     ];
   });
+
+  // Real Exchanges (Phase C)
+  const [exchanges, setExchanges] = useState<ExchangeRecord[]>([]);
 
   // Reviews
   const [reviews, setReviews] = useState<ProductReview[]>(() => {
@@ -454,6 +461,64 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
         if (!savedErr && savedData) {
           setSavedItemIds(savedData.map(s => s.listing_id));
+        }
+
+        // 4. Fetch user's bargain offers (as buyer or seller)
+        const { data: offersData } = await supabase
+          .from('bargain_offers')
+          .select('*, offer_history(*), profiles!bargain_offers_buyer_id_fkey(full_name)')
+          .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+          .order('updated_at', { ascending: false });
+
+        if (offersData && offersData.length > 0) {
+          const mappedOffers: BargainOffer[] = offersData.map((row: any) => ({
+            id: row.id,
+            conversationId: row.conversation_id,
+            listingId: row.listing_id,
+            buyerId: row.buyer_id,
+            sellerId: row.seller_id,
+            buyerName: row.profiles?.full_name || (row.buyer_id === user.id ? 'You' : 'Student Buyer'),
+            originalPrice: Number(row.original_price),
+            offeredPrice: Number(row.offered_price),
+            counterPrice: row.counter_price ? Number(row.counter_price) : undefined,
+            message: row.message || '',
+            status: row.status as OfferStatus,
+            createdAt: new Date(row.created_at).getTime(),
+            updatedAt: new Date(row.updated_at).getTime(),
+            history: (row.offer_history || [])
+              .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+              .map((h: any) => ({
+                sender: h.sender_role as 'buyer' | 'seller',
+                price: Number(h.price),
+                message: h.message || '',
+                timestamp: new Date(h.created_at).getTime()
+              }))
+          }));
+          setBargainOffers(mappedOffers);
+        }
+
+        // 5. Fetch user's active exchanges
+        const { data: exchangeData } = await supabase
+          .from('exchanges')
+          .select('*')
+          .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+          .order('created_at', { ascending: false });
+
+        if (exchangeData) {
+          const mappedExchanges: ExchangeRecord[] = exchangeData.map((row: any) => ({
+            id: row.id,
+            listingId: row.listing_id,
+            offerId: row.offer_id,
+            buyerId: row.buyer_id,
+            sellerId: row.seller_id,
+            agreedPrice: Number(row.agreed_price),
+            status: row.status as 'reserved' | 'completed' | 'cancelled',
+            meetupLocation: row.meetup_location,
+            buyerConfirmedAt: row.buyer_confirmed_at,
+            sellerConfirmedAt: row.seller_confirmed_at,
+            createdAt: new Date(row.created_at).getTime()
+          }));
+          setExchanges(mappedExchanges);
         }
       }
     } catch (err) {
@@ -755,7 +820,54 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   // Feature 2: Bargaining & Offers
-  const makeOffer = (listingId: string, offeredPrice: number, message: string): BargainOffer => {
+  const makeOffer = async (listingId: string, offeredPrice: number, message: string): Promise<BargainOffer | null> => {
+    if (isSupabaseConfigured && user?.id) {
+      try {
+        const { data, error } = await supabase.rpc('create_bargain_offer', {
+          p_listing_id: listingId,
+          p_offered_price: offeredPrice,
+          p_message: message.trim() || undefined
+        });
+
+        if (error) {
+          showToast('Could Not Send Offer', error.message, 'warning');
+          return null;
+        }
+
+        const newOffer: BargainOffer = {
+          id: data.id,
+          conversationId: data.conversation_id,
+          listingId: data.listing_id,
+          buyerId: data.buyer_id,
+          sellerId: data.seller_id,
+          buyerName: user.user_metadata?.full_name || 'You',
+          originalPrice: Number(data.original_price),
+          offeredPrice: Number(data.offered_price),
+          message: data.message || '',
+          status: 'Pending',
+          createdAt: new Date(data.created_at).getTime(),
+          updatedAt: new Date(data.updated_at).getTime(),
+          history: [
+            {
+              sender: 'buyer',
+              price: offeredPrice,
+              message,
+              timestamp: Date.now()
+            }
+          ]
+        };
+
+        setBargainOffers(prev => [newOffer, ...prev.filter(o => o.listingId !== listingId)]);
+        earnCoins(10, 'Proposed Peer Bargain Offer');
+        showToast('Offer Sent to Seller!', `Offered ₹${offeredPrice}. Notification sent in chat.`, 'success');
+        return newOffer;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to send offer';
+        showToast('Offer Error', msg, 'warning');
+        return null;
+      }
+    }
+
     const targetItem = listings.find(i => i.id === listingId);
     const originalPrice = targetItem ? targetItem.price : offeredPrice;
 
@@ -780,11 +892,86 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
 
     setBargainOffers(prev => [newOffer, ...prev.filter(o => o.listingId !== listingId)]);
-    showToast('Offer Proposed', `Offered ₹${offeredPrice} (Original: ₹${originalPrice}). Waiting for seller response.`, 'info');
+    showToast('Offer Proposed (Demo)', `Offered ₹${offeredPrice} (Original: ₹${originalPrice}). Waiting for seller response.`, 'info');
     return newOffer;
   };
 
-  const respondToOffer = (offerId: string, action: 'accept' | 'reject' | 'counter', counterPrice?: number, message?: string) => {
+  const respondToOffer = async (
+    offerId: string, 
+    action: 'accept' | 'reject' | 'counter', 
+    counterPrice?: number, 
+    message?: string
+  ): Promise<void> => {
+    if (isSupabaseConfigured && user?.id) {
+      try {
+        if (action === 'accept') {
+          const { data, error } = await supabase.rpc('accept_bargain_offer', {
+            p_offer_id: offerId,
+            p_message: message || undefined
+          });
+
+          if (error) {
+            showToast('Could Not Accept Offer', error.message, 'warning');
+            return;
+          }
+
+          const agreedPrice = Number(data.offer.agreed_price);
+          setBargainOffers(prev => prev.map(o => o.id === offerId ? {
+            ...o,
+            status: 'Accepted',
+            history: [...o.history, { sender: 'seller', price: agreedPrice, message: message || 'Deal accepted!', timestamp: Date.now() }]
+          } : o.listingId === o.listingId ? { ...o, status: 'Rejected' } : o));
+
+          setListings(prev => prev.map(l => l.id === data.exchange?.listing_id ? { ...l, agreedPrice } : l));
+          earnCoins(25, 'Successful Campus Bargain Agreement');
+          showToast('Offer Accepted!', `Deal agreed on ₹${agreedPrice}! Meetup details ready.`, 'success');
+          return;
+        }
+
+        if (action === 'counter' && counterPrice) {
+          const { data, error } = await supabase.rpc('counter_bargain_offer', {
+            p_offer_id: offerId,
+            p_counter_price: counterPrice,
+            p_message: message || undefined
+          });
+
+          if (error) {
+            showToast('Could Not Propose Counteroffer', error.message, 'warning');
+            return;
+          }
+
+          setBargainOffers(prev => prev.map(o => o.id === offerId ? {
+            ...o,
+            status: 'Countered',
+            counterPrice: Number(data.counter_price),
+            history: [...o.history, { sender: 'seller', price: counterPrice, message: message || `Countered with ₹${counterPrice}`, timestamp: Date.now() }]
+          } : o));
+          showToast('Counteroffer Sent', `Countered with ₹${counterPrice}.`, 'info');
+          return;
+        }
+
+        if (action === 'reject') {
+          const { error } = await supabase.rpc('reject_bargain_offer', {
+            p_offer_id: offerId,
+            p_message: message || undefined
+          });
+
+          if (error) {
+            showToast('Could Not Reject Offer', error.message, 'warning');
+            return;
+          }
+
+          setBargainOffers(prev => prev.map(o => o.id === offerId ? { ...o, status: 'Rejected' } : o));
+          showToast('Offer Declined', 'The offer was declined.', 'warning');
+          return;
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Offer response failed';
+        showToast('Error', msg, 'warning');
+        return;
+      }
+    }
+
     setBargainOffers(prev => prev.map(offer => {
       if (offer.id !== offerId) return offer;
 
@@ -798,7 +985,7 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         const exchangeId = `exchange-${Date.now()}`;
         setCompletedExchangeIds(ex => [...ex, exchangeId]);
 
-        showToast('Offer Accepted!', `Agreed on ₹${agreedPrice}! Meetup details ready.`, 'success');
+        showToast('Offer Accepted (Demo)', `Agreed on ₹${agreedPrice}! Meetup details ready.`, 'success');
 
         return {
           ...offer,
@@ -812,7 +999,7 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
 
       if (action === 'counter' && counterPrice) {
-        showToast('Counteroffer Proposed', `Countered with ₹${counterPrice}.`, 'info');
+        showToast('Counteroffer Proposed (Demo)', `Countered with ₹${counterPrice}.`, 'info');
         return {
           ...offer,
           status: 'Countered',
@@ -826,7 +1013,7 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
 
       // reject
-      showToast('Offer Declined', 'The offer was rejected by the seller.', 'warning');
+      showToast('Offer Declined (Demo)', 'The offer was rejected by the seller.', 'warning');
       return {
         ...offer,
         status: 'Rejected',
@@ -839,9 +1026,50 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }));
   };
 
-  const cancelOffer = (offerId: string) => {
+  const cancelOffer = async (offerId: string): Promise<void> => {
+    if (isSupabaseConfigured && user?.id) {
+      try {
+        const { error } = await supabase.rpc('cancel_bargain_offer', {
+          p_offer_id: offerId
+        });
+        if (error) {
+          showToast('Could Not Cancel Offer', error.message, 'warning');
+          return;
+        }
+      } catch (err: unknown) {
+        console.warn('Backend cancel offer error:', err);
+      }
+    }
+
     setBargainOffers(prev => prev.map(o => o.id === offerId ? { ...o, status: 'Cancelled' as const } : o));
     showToast('Offer Cancelled', 'Your pending offer was cancelled.', 'info');
+  };
+
+  const confirmExchange = async (exchangeId: string): Promise<void> => {
+    if (isSupabaseConfigured && user?.id) {
+      try {
+        const { data, error } = await supabase.rpc('confirm_exchange_completion', {
+          p_exchange_id: exchangeId
+        });
+        if (error) {
+          showToast('Confirmation Error', error.message, 'warning');
+          return;
+        }
+
+        if (data.status === 'completed') {
+          showToast('Exchange Completed!', 'Both students confirmed the handover! Listing marked sold.', 'success');
+          earnCoins(30, 'Completed In-Person Campus Handover');
+        } else {
+          showToast('Confirmation Recorded', 'Your confirmation was recorded. Waiting for peer confirmation.', 'info');
+        }
+        await refreshBackendData();
+        return;
+      } catch (err: unknown) {
+        console.warn('Confirm exchange error:', err);
+      }
+    }
+
+    showToast('Handover Confirmed (Demo)', 'Verified exchange complete.', 'success');
   };
 
   const getOfferForListing = (listingId: string) => {
@@ -1213,10 +1441,12 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         acceptWantedOffer,
         markRequestFulfilled,
         bargainOffers,
+        exchanges,
         makeOffer,
         respondToOffer,
         cancelOffer,
         getOfferForListing,
+        confirmExchange,
         reviews,
         completedExchangeIds,
         addReview,

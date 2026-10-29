@@ -94,9 +94,37 @@ export interface WantedRequest {
 // Feature 2: Bargaining & Offers
 export type OfferStatus = 'Pending' | 'Accepted' | 'Rejected' | 'Countered' | 'Cancelled' | 'Expired';
 
-export interface BargainOffer {
+export interface ChatMessage {
+  id: string;
+  conversationId?: string;
+  senderId?: string;
+  sender: 'buyer' | 'seller' | 'system';
+  text: string;
+  time: string;
+  timestamp?: number;
+  messageType?: 'text' | 'system' | 'offer_event';
+}
+
+export interface ExchangeRecord {
   id: string;
   listingId: string;
+  offerId?: string;
+  buyerId: string;
+  sellerId: string;
+  agreedPrice: number;
+  status: 'reserved' | 'completed' | 'cancelled';
+  meetupLocation: string;
+  buyerConfirmedAt?: string | null;
+  sellerConfirmedAt?: string | null;
+  createdAt: number;
+}
+
+export interface BargainOffer {
+  id: string;
+  conversationId?: string;
+  listingId: string;
+  buyerId?: string;
+  sellerId?: string;
   buyerName: string;
   originalPrice: number;
   offeredPrice: number;
