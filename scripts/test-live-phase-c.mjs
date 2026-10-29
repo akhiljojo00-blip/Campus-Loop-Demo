@@ -325,7 +325,62 @@ async function runPhaseCLiveTests() {
     if (msgCErr) throw msgCErr;
     assert(
       Boolean(msgC?.id) && msgC.message.includes('blue jacket'),
-      'Buyer C sent chat message in private conversation'
+      'Buyer C sent normal text message in private conversation'
+    );
+
+    // Phase C.1 Security: Participant cannot insert 'system' messages
+    console.log('\nTesting Phase C.1: Participant cannot spoof system messages...');
+    const { error: spoofSysErr } = await clientC
+      .from('chat_messages')
+      .insert({
+        conversation_id: offerCData.conversation_id,
+        sender_id: userC.id,
+        message: 'Spoofed system notification: Admin approved discount',
+        message_type: 'system'
+      });
+    assert(
+      spoofSysErr !== null,
+      'Participant User C CANNOT directly insert a "system" message (RLS enforced)',
+      spoofSysErr?.message
+    );
+
+    // Phase C.1 Security: Participant cannot insert 'offer_event' messages
+    console.log('\nTesting Phase C.1: Participant cannot spoof offer_event messages...');
+    const { error: spoofEventErr } = await clientC
+      .from('chat_messages')
+      .insert({
+        conversation_id: offerCData.conversation_id,
+        sender_id: userC.id,
+        message: 'Spoofed offer event: Offer accepted for ₹1',
+        message_type: 'offer_event'
+      });
+    assert(
+      spoofEventErr !== null,
+      'Participant User C CANNOT directly insert an "offer_event" message (RLS enforced)',
+      spoofEventErr?.message
+    );
+
+    // Phase C.1 Security: Anonymous access to chat messages is blocked
+    console.log('\nTesting Phase C.1: Anonymous access to chat messages is blocked...');
+    const { data: anonChat } = await anonClient
+      .from('chat_messages')
+      .select('*')
+      .eq('conversation_id', offerCData.conversation_id);
+    assert(
+      !anonChat || anonChat.length === 0,
+      'Anonymous user cannot read private chat messages (Revoke & RLS enforced)'
+    );
+
+    const { error: anonInsertErr } = await anonClient
+      .from('chat_messages')
+      .insert({
+        conversation_id: offerCData.conversation_id,
+        sender_id: userC.id,
+        message: 'Anonymous intrusion'
+      });
+    assert(
+      anonInsertErr !== null,
+      'Anonymous user cannot insert chat messages'
     );
 
     // Seller A reads conversation messages
@@ -339,6 +394,13 @@ async function runPhaseCLiveTests() {
       sellerMessages.some(m => m.message.includes('blue jacket')),
       'Seller A can read Buyer C private chat messages'
     );
+
+    // Phase C.1: Verify trusted RPC functions generated legitimate system and offer-event messages
+    console.log('\nTesting Phase C.1: Trusted RPC functions generated legitimate system and offer-event messages...');
+    const hasSystemMsg = sellerMessages.some(m => m.message_type === 'system');
+    const hasOfferEvent = sellerMessages.some(m => m.message_type === 'offer_event');
+    assert(hasSystemMsg, 'Trusted RPC generated legitimate "system" message');
+    assert(hasOfferEvent, 'Trusted RPC generated legitimate "offer_event" message');
 
     // Buyer B reads conversation C messages -> should return 0 (RLS isolation)
     const { data: bMessages } = await clientB
