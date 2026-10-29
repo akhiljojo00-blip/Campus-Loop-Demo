@@ -28,6 +28,9 @@ import { WantedDetailModal } from './components/WantedDetailModal';
 import { SellerProfileModal } from './components/SellerProfileModal';
 import { ReviewModal } from './components/ReviewModal';
 import { LoopCoinsWalletModal } from './components/LoopCoinsWalletModal';
+import { CategoryPreferencesModal } from './components/CategoryPreferencesModal';
+import { NotificationCenterModal } from './components/NotificationCenterModal';
+import { PromoteModal } from './components/PromoteModal';
 import { Toast } from './components/Toast';
 
 const MainContent: React.FC = () => {
@@ -104,6 +107,9 @@ const MainContent: React.FC = () => {
       <SellerProfileModal />
       <ReviewModal />
       <LoopCoinsWalletModal />
+      <CategoryPreferencesModal />
+      <NotificationCenterModal />
+      <PromoteModal />
       <Toast />
     </div>
   );

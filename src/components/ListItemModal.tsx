@@ -13,11 +13,13 @@ import {
   User, 
   ArrowRight,
   Info,
-  Sparkles,
-  Loader2
+  Loader2,
+  Navigation,
+  ShieldCheck
 } from 'lucide-react';
 import { Category, Condition, ContactPreference, Listing } from '../types';
 import { SAMPLE_PRESET_IMAGES } from '../data/seedListings';
+import { CAMPUS_LANDMARKS } from '../lib/location';
 
 export const ListItemModal: React.FC = () => {
   const { 
@@ -45,6 +47,39 @@ export const ListItemModal: React.FC = () => {
   const [contactPreference, setContactPreference] = useState<ContactPreference>('Campus Chat');
   const [imageUrl, setImageUrl] = useState(SAMPLE_PRESET_IMAGES[0].url);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [selectedLandmarkId, setSelectedLandmarkId] = useState<string>('library');
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | undefined>({ lat: 28.5458, lng: 77.1925 });
+  const [isLocating, setIsLocating] = useState(false);
+
+  const handleLandmarkChange = (id: string) => {
+    setSelectedLandmarkId(id);
+    const landmark = CAMPUS_LANDMARKS.find(l => l.id === id);
+    if (landmark) {
+      setCampusLocation(landmark.name);
+      setCoordinates({ lat: landmark.lat, lng: landmark.lng });
+    }
+  };
+
+  const handleUseGPSLocation = () => {
+    if (!navigator.geolocation) {
+      showToast('GPS Unavailable', 'Geolocation is not supported by your browser.', 'warning');
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setIsLocating(false);
+        setCoordinates({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setCampusLocation('My Current Campus Spot');
+        showToast('Location Captured', 'Location coordinates saved for distance calculation (exact room is private).', 'success');
+      },
+      () => {
+        setIsLocating(false);
+        showToast('Location Permission', 'Using campus landmark selection instead.', 'info');
+      },
+      { timeout: 8000 }
+    );
+  };
 
   // Sync profile details when available
   useEffect(() => {
@@ -172,6 +207,7 @@ export const ListItemModal: React.FC = () => {
         sellerName: sellerName.trim(),
         sellerDepartment: sellerDepartment.trim(),
         campusLocation: campusLocation.trim(),
+        coordinates,
         contactPreference,
         imageUrl: imageUrl.trim() || SAMPLE_PRESET_IMAGES[0].url,
         tags: [category, condition, 'StudentListing'],
@@ -217,7 +253,7 @@ export const ListItemModal: React.FC = () => {
             </div>
             <div>
               <h2 className="font-serif font-bold text-lg text-white">
-                List an Item on CampusLoop
+                List an Item on Campus Market
               </h2>
               <p className="text-[11px] text-[#FAF8F5]/80">
                 Help a junior, clear your hostel desk, and recover money
@@ -520,17 +556,49 @@ export const ListItemModal: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-stone-800 uppercase tracking-wide mb-1">
-                    Campus Pickup Spot *
+                    Campus Pickup Landmark *
                   </label>
-                  <input
-                    type="text"
-                    value={campusLocation}
-                    onChange={(e) => setCampusLocation(e.target.value)}
-                    placeholder="e.g. Central Library Steps"
-                    className="w-full py-2 px-3 rounded-xl border border-stone-200 text-xs text-stone-900 bg-white focus:border-[#153225] outline-none"
-                  />
+                  <select
+                    value={selectedLandmarkId}
+                    onChange={(e) => handleLandmarkChange(e.target.value)}
+                    className="w-full py-2 px-3 rounded-xl border border-stone-200 text-xs text-stone-900 bg-white focus:border-[#153225] outline-none cursor-pointer mb-1.5"
+                  >
+                    {CAMPUS_LANDMARKS.map(lm => (
+                      <option key={lm.id} value={lm.id}>
+                        {lm.name} ({lm.zone})
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={campusLocation}
+                      onChange={(e) => setCampusLocation(e.target.value)}
+                      placeholder="Specific spot (e.g. 1st Floor Lobby)"
+                      className="flex-1 py-1.5 px-2.5 rounded-xl border border-stone-200 text-xs text-stone-900 bg-white focus:border-[#153225] outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleUseGPSLocation}
+                      disabled={isLocating}
+                      className="px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                      title="Capture current campus GPS spot"
+                    >
+                      <Navigation className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{isLocating ? 'Locating...' : 'GPS'}</span>
+                    </button>
+                  </div>
                   {errors.campusLocation && <p className="text-[10px] text-red-600 mt-0.5">{errors.campusLocation}</p>}
                 </div>
+              </div>
+
+              {/* Location Privacy Note */}
+              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900 flex items-start gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Location Privacy:</strong> Exact hostel room numbers or private GPS coordinates are never made public. Peers only see the landmark zone and approximate walking distance.
+                </span>
               </div>
 
               {/* Contact preference */}

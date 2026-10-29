@@ -16,7 +16,9 @@ import {
   LogIn,
   GraduationCap,
   Sparkles,
-  Mail
+  Mail,
+  Zap,
+  SlidersHorizontal
 } from 'lucide-react';
 
 export const ProfileDrawer: React.FC = () => {
@@ -29,7 +31,10 @@ export const ProfileDrawer: React.FC = () => {
     deleteListing, 
     setSelectedProduct, 
     setIsResetConfirmOpen,
-    setIsListItemModalOpen
+    setIsListItemModalOpen,
+    setIsPromoteModalOpen,
+    setPromotingTarget,
+    setIsPreferencesModalOpen
   } = useCampus();
 
   const { 
@@ -200,6 +205,22 @@ export const ProfileDrawer: React.FC = () => {
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         onClick={() => {
+                          setPromotingTarget({
+                            type: 'listing',
+                            id: item.id,
+                            title: item.title,
+                            category: item.category
+                          });
+                          setIsPromoteModalOpen(true);
+                          setIsProfileDrawerOpen(false);
+                        }}
+                        className="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 transition-colors cursor-pointer"
+                        title="Promote or boost listing"
+                      >
+                        <Zap className="w-4 h-4 text-amber-600" />
+                      </button>
+                      <button
+                        onClick={() => {
                           setSelectedProduct(item);
                           setIsProfileDrawerOpen(false);
                         }}
@@ -253,6 +274,22 @@ export const ProfileDrawer: React.FC = () => {
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         onClick={() => {
+                          setPromotingTarget({
+                            type: 'listing',
+                            id: item.id,
+                            title: item.title,
+                            category: item.category
+                          });
+                          setIsPromoteModalOpen(true);
+                          setIsProfileDrawerOpen(false);
+                        }}
+                        className="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 transition-colors cursor-pointer"
+                        title="Promote or boost listing"
+                      >
+                        <Zap className="w-4 h-4 text-amber-600" />
+                      </button>
+                      <button
+                        onClick={() => {
                           setSelectedProduct(item);
                           setIsProfileDrawerOpen(false);
                         }}
@@ -282,7 +319,7 @@ export const ProfileDrawer: React.FC = () => {
                   </div>
                   <p className="font-serif font-bold text-sm text-stone-800 dark:text-stone-200">You haven't listed any items yet</p>
                   <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 max-w-xs mx-auto mb-4">
-                    Have an old BCA textbook or electronics? Put it up on CampusLoop in 30 seconds.
+                    Have an old textbook or electronics? Put it up on Campus Market in 30 seconds.
                   </p>
                   <button
                     onClick={() => {
@@ -302,6 +339,20 @@ export const ProfileDrawer: React.FC = () => {
 
         {/* Footer Area with Reset Control */}
         <div className="p-4 border-t border-[#E7E3DC] dark:border-emerald-900/60 bg-[#FAF8F5] dark:bg-[#0D1C15]">
+          <button
+            onClick={() => {
+              setIsProfileDrawerOpen(false);
+              setIsPreferencesModalOpen(true);
+            }}
+            className="w-full mb-3 py-2 px-3 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 hover:border-emerald-500 text-xs font-semibold flex items-center justify-between transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Customize Match Alerts</span>
+            </span>
+            <span className="text-[10px] text-stone-400">Preferences →</span>
+          </button>
+
           <div className="flex items-center justify-between">
             <div className="text-[11px] text-stone-500 dark:text-stone-400">
               <span className="font-semibold text-stone-700 dark:text-stone-300">Auth:</span> {isConfigured ? 'campusloop-dev' : 'Offline Demo'}

@@ -17,7 +17,8 @@ import {
   DollarSign,
   ChevronRight,
   Flame,
-  HelpCircle
+  HelpCircle,
+  Zap
 } from 'lucide-react';
 import { Category, WantedStatus, WantedUrgency } from '../types';
 
@@ -27,7 +28,9 @@ export const WantedBoardView: React.FC = () => {
     setIsPostWantedModalOpen, 
     setSelectedWantedRequest, 
     loopCoinsBalance,
-    setIsWalletModalOpen
+    setIsWalletModalOpen,
+    setIsPromoteModalOpen,
+    setPromotingTarget
   } = useCampus();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -430,9 +433,32 @@ export const WantedBoardView: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1 text-[#BA4E29] font-bold group">
-                    <span>{req.offers.length > 0 ? `${req.offers.length} Offers` : 'Send Offer'}</span>
-                    <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  <div className="flex items-center gap-2">
+                    {req.isUserRequest && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPromotingTarget({
+                            type: 'wanted_request',
+                            id: req.id,
+                            title: req.title,
+                            category: req.category
+                          });
+                          setIsPromoteModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 text-[10px] font-bold transition-colors cursor-pointer"
+                        title="Boost wanted request"
+                      >
+                        <Zap className="w-2.5 h-2.5 text-amber-600" />
+                        <span>Boost ₹3</span>
+                      </button>
+                    )}
+
+                    <div className="flex items-center gap-1 text-[#BA4E29] font-bold group">
+                      <span>{req.offers.length > 0 ? `${req.offers.length} Offers` : 'Send Offer'}</span>
+                      <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
                   </div>
                 </div>
               </div>

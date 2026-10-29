@@ -81,12 +81,12 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       </div>
 
       <div className="flex flex-col">
-        <span className={`font-serif font-bold tracking-tight text-[#153225] leading-none ${textSizes[size]}`}>
-          Campus<span className="text-[#BA4E29]">Loop</span>
+        <span className={`font-serif font-bold tracking-tight text-[#153225] dark:text-emerald-300 leading-none ${textSizes[size]}`}>
+          Campus<span className="text-[#BA4E29]">Market</span>
         </span>
         {showTagline && (
-          <span className="text-[10px] tracking-wider font-semibold uppercase text-stone-500 mt-0.5">
-            Your Campus. Your Stuff. Your Loop.
+          <span className="text-[10px] tracking-wider font-semibold uppercase text-stone-500 dark:text-stone-400 mt-0.5">
+            Buy, Sell and Find What You Need on Campus
           </span>
         )}
       </div>

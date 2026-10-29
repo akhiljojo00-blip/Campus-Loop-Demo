@@ -212,3 +212,53 @@ export type SortOption =
   | 'price-high' 
   | 'savings'
   | 'nearest';
+
+// Feature: Category Preferences & Notifications
+export interface UserCategoryPreferences {
+  buyCategories: Category[];
+  sellCategories: Category[];
+  wantedCategories: Category[];
+  notificationsEnabled: boolean;
+  quietHoursStart?: string | null;
+  quietHoursEnd?: string | null;
+}
+
+export type NotificationType = 
+  | 'new_listing_match' 
+  | 'wanted_match' 
+  | 'offer_update' 
+  | 'exchange_update' 
+  | 'promotion_active' 
+  | 'system';
+
+export interface InAppNotification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  linkId?: string;
+  linkType?: 'listing' | 'wanted' | 'chat';
+  isRead: boolean;
+  createdAt: string;
+  timestamp: number;
+}
+
+// Feature: Promotions & Monetization
+export type PromoType = 'boost_24h' | 'featured_7d' | 'featured_30d';
+
+export interface PromotionRecord {
+  id: string;
+  userId: string;
+  targetType: 'listing' | 'wanted_request';
+  targetId: string;
+  promoType: PromoType;
+  priceInr: number;
+  status: 'pending_payment' | 'active' | 'expired' | 'cancelled';
+  startsAt: string;
+  expiresAt: string;
+  paymentReference?: string | null;
+}
+
+export type DistanceRadiusOption = 'all' | '500m' | '1km' | '3km' | '5km';
+

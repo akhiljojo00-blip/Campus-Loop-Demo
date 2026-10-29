@@ -169,10 +169,10 @@ export const AuthModal: React.FC = () => {
               : resetSentEmail
               ? 'Check Your Inbox'
               : authModalMode === 'signin' 
-              ? 'Sign in to CampusLoop' 
+              ? 'Sign in to Campus Market' 
               : authModalMode === 'signup' 
-              ? 'Create Student Account' 
-              : 'Reset Your Password'
+                ? 'Create Student Account' 
+                : 'Reset Your Password'
             }
           </h2>
 
@@ -351,7 +351,7 @@ export const AuthModal: React.FC = () => {
               </button>
 
               <div className="pt-2 text-center text-xs text-stone-500 dark:text-stone-400">
-                New to CampusLoop?{' '}
+                New to Campus Market?{' '}
                 <button
                   type="button"
                   onClick={() => {

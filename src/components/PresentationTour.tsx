@@ -52,10 +52,10 @@ export const PresentationTour: React.FC = () => {
     {
       step: 2,
       badge: 'The Solution',
-      title: 'CampusLoop 2.0: Circular Economy & Wanted Board',
-      summary: 'CampusLoop provides both a marketplace feed AND a reverse "Wanted Board" where students request exact items with their budget.',
+      title: 'Campus Market: Circular Economy & Wanted Board',
+      summary: 'Campus Market provides both a marketplace feed AND a reverse "Wanted Board" where students request exact items with their budget.',
       talkingPoints: [
-        '“Your campus. Your stuff. Your loop.” tagline & student brand.',
+        '“Buy, Sell and Find What You Need on Campus” tagline & student brand.',
         'Reverse Wanted Board: buyers post requests, seniors respond with offers.',
         'Zero commission on peer-to-peer student transactions.'
       ],
@@ -152,7 +152,7 @@ export const PresentationTour: React.FC = () => {
             </span>
             <div>
               <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-300">
-                BCA Class Presentation Guide (CampusLoop 2.0)
+                Class Presentation Guide (Campus Market)
               </span>
               <h3 className="font-serif font-bold text-sm text-white">
                 Step {current.step} of 5: {current.badge}

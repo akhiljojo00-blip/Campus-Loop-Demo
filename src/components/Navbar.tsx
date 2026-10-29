@@ -21,7 +21,9 @@ import {
   MapPin,
   ClipboardList,
   LogIn,
-  LogOut
+  LogOut,
+  Bell,
+  SlidersHorizontal
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -38,7 +40,10 @@ export const Navbar: React.FC = () => {
     setPresentationStep,
     loopCoinsBalance,
     theme,
-    toggleTheme
+    toggleTheme,
+    unreadNotificationCount,
+    setIsNotificationCenterOpen,
+    setIsPreferencesModalOpen
   } = useCampus();
 
   const {
@@ -77,7 +82,7 @@ export const Navbar: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="text-[#FAF8F5]/90 font-medium tracking-wide">
-              CampusLoop 3.0 <span className="hidden sm:inline text-white/50">•</span> <span className="hidden sm:inline text-[#DDE7DF]">Phase A: Supabase Dev Auth (`campusloop-dev`)</span>
+              Campus Market <span className="hidden sm:inline text-white/50">•</span> <span className="hidden sm:inline text-[#DDE7DF]">Buy, Sell and Find What You Need on Campus (`campusloop-dev`)</span>
             </span>
           </div>
 
@@ -249,6 +254,21 @@ export const Navbar: React.FC = () => {
               )}
             </button>
 
+            {/* In-App Notification Bell */}
+            <button
+              onClick={() => setIsNotificationCenterOpen(true)}
+              className="relative p-2 rounded-xl text-stone-700 dark:text-stone-200 hover:text-[#153225] dark:hover:text-white hover:bg-stone-200/50 dark:hover:bg-stone-800 transition-colors focus:outline-none cursor-pointer"
+              title="Notifications & Match Alerts"
+              aria-label="View notifications"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadNotificationCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#BA4E29] text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-[#FAF8F5] dark:ring-[#0D1C15] animate-pulse">
+                  {unreadNotificationCount}
+                </span>
+              )}
+            </button>
+
             {/* Primary CTA */}
             <button
               onClick={() => setIsListItemModalOpen(true)}
@@ -327,6 +347,22 @@ export const Navbar: React.FC = () => {
                     </span>
                     <span className="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 text-[11px] font-semibold">
                       {userListingIds.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setDemoMenuOpen(false);
+                      setIsPreferencesModalOpen(true);
+                    }}
+                    className="w-full flex items-center justify-between p-2 rounded-lg text-stone-700 dark:text-stone-200 hover:bg-[#FAF8F5] dark:hover:bg-stone-800 transition-colors"
+                  >
+                    <span className="flex items-center gap-2 font-medium">
+                      <SlidersHorizontal className="w-4 h-4 text-emerald-600" />
+                      Category Preferences
+                    </span>
+                    <span className="text-[10px] text-stone-400 font-semibold">
+                      Alerts
                     </span>
                   </button>
 
@@ -431,7 +467,7 @@ export const Navbar: React.FC = () => {
               }`}
             >
               <HelpCircle className="w-4 h-4 text-amber-700" />
-              <span>How CampusLoop Works</span>
+              <span>How Campus Market Works</span>
             </button>
 
             <button
@@ -442,6 +478,17 @@ export const Navbar: React.FC = () => {
             >
               <TrendingUp className="w-4 h-4 text-[#BA4E29]" />
               <span>Business Model (BCA Management)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setIsPreferencesModalOpen(true);
+              }}
+              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-emerald-600" />
+              <span>Category Match Preferences</span>
             </button>
 
             <div className="h-px bg-stone-200 dark:bg-stone-800 my-2" />

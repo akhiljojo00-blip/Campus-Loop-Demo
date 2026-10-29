@@ -18,7 +18,8 @@ import {
   DollarSign,
   Star,
   Flame,
-  Compass
+  Compass,
+  Zap
 } from 'lucide-react';
 
 export const ProductDetailModal: React.FC = () => {
@@ -33,7 +34,9 @@ export const ProductDetailModal: React.FC = () => {
     getSellerProfile,
     setSelectedSellerProfile,
     setActiveTab,
-    showToast
+    showToast,
+    setIsPromoteModalOpen,
+    setPromotingTarget
   } = useCampus();
 
   const [imgError, setImgError] = useState(false);
@@ -50,7 +53,7 @@ export const ProductDetailModal: React.FC = () => {
 
   const handleShare = () => {
     navigator.clipboard?.writeText(window.location.href);
-    showToast('Link Copied', `CampusLoop link for "${selectedProduct.title}" copied to clipboard.`, 'info');
+    showToast('Link Copied', `Campus Market link for "${selectedProduct.title}" copied to clipboard.`, 'info');
   };
 
   return (
@@ -266,6 +269,26 @@ export const ProductDetailModal: React.FC = () => {
 
             {/* Bottom Actions */}
             <div>
+              {/* Owner Promote CTA */}
+              {selectedProduct.isUserListing && (
+                <button
+                  onClick={() => {
+                    setPromotingTarget({
+                      type: 'listing',
+                      id: selectedProduct.id,
+                      title: selectedProduct.title,
+                      category: selectedProduct.category
+                    });
+                    setIsPromoteModalOpen(true);
+                    setSelectedProduct(null);
+                  }}
+                  className="w-full py-2.5 px-4 mb-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-warm transition-all cursor-pointer"
+                >
+                  <Zap className="w-4 h-4 fill-white" />
+                  <span>⚡ Boost or Feature This Listing (₹3 – ₹19)</span>
+                </button>
+              )}
+
               {/* Dual Action Buttons: Make Offer (Bargain) vs Contact */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
                 <button

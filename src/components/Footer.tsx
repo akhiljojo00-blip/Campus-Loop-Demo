@@ -51,7 +51,7 @@ export const Footer: React.FC = () => {
               <BrandLogo size="md" showTagline />
             </div>
             <p className="text-xs sm:text-sm text-[#FAF8F5]/80 leading-relaxed mb-6">
-              CampusLoop 2.0 is an enhanced peer-to-peer campus circular economy platform featuring a marketplace feed, reverse Wanted Board, peer price bargaining, interactive campus mapping, and virtual LoopCoins rewards.
+              Campus Market is a student-first campus circular economy platform. Buy, sell, and find course gear, textbooks, and dorm essentials with verified peers, private bargaining, and real-time campus matching.
             </p>
             <div className="flex items-center gap-2 text-xs text-[#FAF8F5]/70">
               <MapPin className="w-3.5 h-3.5 text-[#BA4E29]" />
@@ -161,7 +161,7 @@ export const Footer: React.FC = () => {
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-[#FAF8F5]/60">
           <div className="text-center md:text-left">
             <p className="font-medium">
-              © {new Date().getFullYear()} CampusLoop 2.0 • Interactive Concept Demonstration.
+              © {new Date().getFullYear()} Campus Market • Buy, Sell and Find What You Need on Campus.
             </p>
             <p className="text-[11px] text-[#FAF8F5]/50 mt-0.5">
               Sample data for academic evaluation only. LoopCoins and ratings are simulated demonstrations in browser localStorage.

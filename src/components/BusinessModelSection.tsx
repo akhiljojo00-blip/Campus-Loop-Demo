@@ -19,10 +19,10 @@ export const BusinessModelSection: React.FC = () => {
       badge: 'Micro-Monetization',
       badgeColor: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-800',
       title: 'Featured Listings & Wanted Boosts',
-      model: '₹20 – ₹49 Per Boost Slot',
-      description: 'Sellers who want urgent sales during semester start or exam weeks can optionally pin their items or wanted requests with LoopCoins or micro-payments for higher visibility.',
-      focus: 'Micro-payments via UPI; completely voluntary without penalizing regular free users.',
-      status: 'Simulated in CampusLoop 2.0',
+      model: '₹3 – ₹19 Micro-Promotions',
+      description: 'Sellers and buyers who want faster responses during semester start or exam weeks can optionally boost listings (₹3 for 24h, ₹9 for 7d, ₹19 for 30d) or Wanted requests for priority discovery.',
+      focus: 'Micro-payments; completely voluntary without penalizing regular free users.',
+      status: 'Promotions Catalogue Active',
       statusColor: 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/80 border-amber-200 dark:border-amber-800'
     },
     {
@@ -42,7 +42,7 @@ export const BusinessModelSection: React.FC = () => {
       badgeColor: 'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300 border-purple-200 dark:border-purple-800',
       title: 'Optional Escrow & Safe Delivery',
       model: '2% - 3% Platform Convenience Fee',
-      description: 'Only if CampusLoop introduces automated digital escrow payments, instant refunds, or hostel delivery lockers will a nominal service fee ever be considered.',
+      description: 'Only if Campus Market introduces automated digital escrow payments, instant refunds, or hostel delivery lockers will a nominal service fee ever be considered.',
       focus: 'High value items (laptops, expensive tablets) where buyer escrow provides insurance.',
       status: 'Long-Term Exploration Only',
       statusColor: 'text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/80 border-purple-200 dark:border-purple-800'
@@ -127,7 +127,7 @@ export const BusinessModelSection: React.FC = () => {
               BCA Management Concept Disclosure
             </strong>
             This website is a business prototype demonstration for a 1st Year BCA management coursework assignment. 
-            CampusLoop currently operates entirely on zero-revenue sample seed data and local browser storage. 
+            Campus Market operates with verified campus students and provides optional voluntary micro-promotions and sample demonstration data. 
             We do not claim existing corporate partnerships, paid transactions, or real bank integration in this prototype.
           </div>
         </div>

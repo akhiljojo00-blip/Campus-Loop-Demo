@@ -9,14 +9,14 @@ export const ImpactSection: React.FC = () => {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
           <span className="text-xs font-bold tracking-wider uppercase text-[#BA4E29] bg-[#FAECE6] dark:bg-orange-950/60 px-3 py-1 rounded-full">
-            Why CampusLoop
+            Why Campus Market
           </span>
           <h2 className="font-serif font-extrabold text-2xl sm:text-3xl text-[#153225] dark:text-[#FAF8F5] mt-3">
             Built for how college students actually live and study
           </h2>
           <p className="text-sm sm:text-base text-stone-600 dark:text-stone-400 mt-2 leading-relaxed">
             Standard ecommerce adds packaging delays, delivery charges, and stranger risk. 
-            CampusLoop organizes what already exists within walking distance of your lecture hall.
+            Campus Market organizes what already exists within walking distance of your lecture hall.
           </p>
         </div>
 

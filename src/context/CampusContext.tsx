@@ -15,7 +15,12 @@ import {
   ProductReview,
   SellerProfileData,
   CoinTransaction,
-  LiveLocationSession
+  LiveLocationSession,
+  UserCategoryPreferences,
+  InAppNotification,
+  PromoType,
+  PromotionRecord,
+  DistanceRadiusOption
 } from '../types';
 import { INITIAL_SEED_LISTINGS } from '../data/seedListings';
 import { INITIAL_SEED_WANTED } from '../data/seedWanted';
@@ -29,6 +34,9 @@ const STORAGE_KEY_OFFERS = 'campusloop_offers_v2';
 const STORAGE_KEY_REVIEWS = 'campusloop_reviews_v2';
 const STORAGE_KEY_COINS = 'campusloop_coins_v2';
 const STORAGE_KEY_THEME = 'campusloop_theme_v2';
+const STORAGE_KEY_PREFERENCES = 'campusloop_preferences_v2';
+const STORAGE_KEY_NOTIFICATIONS = 'campusloop_notifications_v2';
+const STORAGE_KEY_PROMOTIONS = 'campusloop_promotions_v2';
 
 interface CampusContextType {
   listings: Listing[];
@@ -120,6 +128,33 @@ interface CampusContextType {
   userCoords: { lat: number; lng: number } | null;
   setUserCoords: (coords: { lat: number; lng: number } | null) => void;
   requestUserLocation: () => Promise<boolean>;
+  selectedDistanceRadius: DistanceRadiusOption;
+  setSelectedDistanceRadius: (radius: DistanceRadiusOption) => void;
+  selectedCampusLandmark: string;
+  setSelectedCampusLandmark: (landmarkId: string) => void;
+
+  // Feature: Category Preferences
+  userCategoryPreferences: UserCategoryPreferences;
+  saveCategoryPreferences: (prefs: Partial<UserCategoryPreferences>) => Promise<void>;
+  isPreferencesModalOpen: boolean;
+  setIsPreferencesModalOpen: (open: boolean) => void;
+
+  // Feature: In-App Notifications
+  notifications: InAppNotification[];
+  unreadNotificationCount: number;
+  isNotificationCenterOpen: boolean;
+  setIsNotificationCenterOpen: (open: boolean) => void;
+  markNotificationAsRead: (id: string) => Promise<void>;
+  markAllNotificationsAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
+
+  // Feature: Monetization & Promotions
+  promotions: PromotionRecord[];
+  isPromoteModalOpen: boolean;
+  setIsPromoteModalOpen: (open: boolean) => void;
+  promotingTarget: { type: 'listing' | 'wanted_request'; id: string; title: string; category?: string } | null;
+  setPromotingTarget: (target: { type: 'listing' | 'wanted_request'; id: string; title: string; category?: string } | null) => void;
+  requestPromotion: (targetType: 'listing' | 'wanted_request', targetId: string, promoType: PromoType, paymentRef?: string) => Promise<PromotionRecord | null>;
 
   // Presentation Mode
   isPresentationMode: boolean;
@@ -347,6 +382,63 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [selectedSellerProfile, setSelectedSellerProfile] = useState<SellerProfileData | null>(null);
   const [selectedWantedRequest, setSelectedWantedRequest] = useState<WantedRequest | null>(null);
 
+  // Distance radius filter & Campus landmark
+  const [selectedDistanceRadius, setSelectedDistanceRadius] = useState<DistanceRadiusOption>('all');
+  const [selectedCampusLandmark, setSelectedCampusLandmark] = useState<string>('all');
+
+  // Feature: Category Preferences
+  const [userCategoryPreferences, setUserCategoryPreferences] = useState<UserCategoryPreferences>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_PREFERENCES);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      console.warn('Error reading preferences:', e);
+    }
+    return {
+      buyCategories: ['Textbooks', 'Electronics'],
+      sellCategories: ['Stationery'],
+      wantedCategories: ['Textbooks'],
+      notificationsEnabled: true
+    };
+  });
+  const [isPreferencesModalOpen, setIsPreferencesModalOpen] = useState(false);
+
+  // Feature: In-App Notifications
+  const [notifications, setNotifications] = useState<InAppNotification[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_NOTIFICATIONS);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      console.warn('Error reading notifications:', e);
+    }
+    return [
+      {
+        id: 'notif-welcome',
+        userId: 'demo-user',
+        title: 'Welcome to Campus Market!',
+        message: 'Buy, sell, and find what you need with verified campus peers.',
+        type: 'system',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        timestamp: Date.now()
+      }
+    ];
+  });
+  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
+
+  // Feature: Monetization & Promotions
+  const [promotions, setPromotions] = useState<PromotionRecord[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_PROMOTIONS);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      console.warn('Error reading promotions:', e);
+    }
+    return [];
+  });
+  const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
+  const [promotingTarget, setPromotingTarget] = useState<{ type: 'listing' | 'wanted_request'; id: string; title: string; category?: string } | null>(null);
+
   // Presentation Mode
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [presentationStep, setPresentationStep] = useState(0);
@@ -397,6 +489,8 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             timestamp: new Date(row.created_at).getTime(),
             imageUrl: row.image_url,
             isFeatured: row.is_featured,
+            isBoosted: row.is_boosted,
+            boostExpiresAt: row.boost_expires_at ? Number(row.boost_expires_at) : undefined,
             isUserListing: user?.id === row.seller_id,
             contactPreference: row.contact_preference,
             tags: row.tags || [],
@@ -520,6 +614,67 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           }));
           setExchanges(mappedExchanges);
         }
+
+        // 6. Fetch user category preferences
+        const { data: prefData } = await supabase
+          .from('user_category_preferences')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (prefData) {
+          setUserCategoryPreferences({
+            buyCategories: prefData.buy_categories || [],
+            sellCategories: prefData.sell_categories || [],
+            wantedCategories: prefData.wanted_categories || [],
+            notificationsEnabled: prefData.notifications_enabled !== false,
+            quietHoursStart: prefData.quiet_hours_start,
+            quietHoursEnd: prefData.quiet_hours_end
+          });
+        }
+
+        // 7. Fetch user in-app notifications
+        const { data: notifData } = await supabase
+          .from('in_app_notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (notifData) {
+          setNotifications(notifData.map((n: any) => ({
+            id: n.id,
+            userId: n.user_id,
+            title: n.title,
+            message: n.message,
+            type: n.type,
+            linkId: n.link_id,
+            linkType: n.link_type,
+            isRead: n.is_read,
+            createdAt: n.created_at,
+            timestamp: new Date(n.created_at).getTime()
+          })));
+        }
+      }
+
+      // 8. Fetch active promotions
+      const { data: promoData } = await supabase
+        .from('promotions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (promoData) {
+        setPromotions(promoData.map((p: any) => ({
+          id: p.id,
+          userId: p.user_id,
+          targetType: p.target_type,
+          targetId: p.target_id,
+          promoType: p.promo_type,
+          priceInr: Number(p.price_inr),
+          status: p.status,
+          startsAt: p.starts_at,
+          expiresAt: p.expires_at,
+          paymentReference: p.payment_reference
+        })));
       }
     } catch (err) {
       console.warn('Failed to refresh Supabase data:', err);
@@ -1364,6 +1519,243 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setPresentationStep(prev => Math.max(prev - 1, 0));
   };
 
+  // -------------------------------------------------------------
+  // Feature: Category Preferences
+  // -------------------------------------------------------------
+  const saveCategoryPreferences = async (newPrefs: Partial<UserCategoryPreferences>) => {
+    const updated: UserCategoryPreferences = {
+      ...userCategoryPreferences,
+      ...newPrefs
+    };
+    setUserCategoryPreferences(updated);
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFERENCES, JSON.stringify(updated));
+    } catch (e) {
+      console.warn('Failed saving preferences to localStorage', e);
+    }
+
+    if (isSupabaseConfigured && user?.id) {
+      const { error } = await supabase
+        .from('user_category_preferences')
+        .upsert({
+          user_id: user.id,
+          buy_categories: updated.buyCategories,
+          sell_categories: updated.sellCategories,
+          wanted_categories: updated.wantedCategories,
+          notifications_enabled: updated.notificationsEnabled,
+          quiet_hours_start: updated.quietHoursStart,
+          quiet_hours_end: updated.quietHoursEnd,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.warn('Failed syncing preferences to Supabase:', error.message);
+        throw error;
+      }
+    }
+  };
+
+  // -------------------------------------------------------------
+  // Feature: In-App Notifications
+  // -------------------------------------------------------------
+  const markNotificationAsRead = async (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    if (isSupabaseConfigured && user?.id) {
+      await supabase
+        .from('in_app_notifications')
+        .update({ is_read: true })
+        .eq('id', id);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    if (isSupabaseConfigured && user?.id) {
+      await supabase
+        .from('in_app_notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id);
+    }
+  };
+
+  const deleteNotification = async (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    if (isSupabaseConfigured && user?.id) {
+      await supabase
+        .from('in_app_notifications')
+        .delete()
+        .eq('id', id);
+    }
+  };
+
+  // Realtime notification listener
+  useEffect(() => {
+    if (!isSupabaseConfigured || !user?.id) return;
+
+    const channel = supabase
+      .channel(`user-notifications-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'in_app_notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        payload => {
+          if (payload.new) {
+            const row = payload.new as any;
+            const newNotif: InAppNotification = {
+              id: row.id,
+              userId: row.user_id,
+              title: row.title,
+              message: row.message,
+              type: row.type,
+              linkId: row.link_id,
+              linkType: row.link_type,
+              isRead: row.is_read,
+              createdAt: row.created_at,
+              timestamp: new Date(row.created_at).getTime()
+            };
+            setNotifications(prev => [newNotif, ...prev]);
+            showToast('🔔 ' + newNotif.title, newNotif.message, 'info');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
+  // -------------------------------------------------------------
+  // Feature: Monetization & Promotions
+  // -------------------------------------------------------------
+  const requestPromotion = async (
+    targetType: 'listing' | 'wanted_request',
+    targetId: string,
+    promoType: PromoType,
+    paymentRef?: string
+  ): Promise<PromotionRecord | null> => {
+    const prices: Record<PromoType, number> = {
+      boost_24h: 3,
+      featured_7d: 9,
+      featured_30d: 19
+    };
+    const priceInr = prices[promoType];
+    const durationMs = promoType === 'boost_24h' 
+      ? 24 * 3600000 
+      : promoType === 'featured_7d' 
+        ? 7 * 86400000 
+        : 30 * 86400000;
+
+    if (isSupabaseConfigured && user?.id) {
+      const { data, error } = await supabase.rpc('request_promotion', {
+        p_target_type: targetType,
+        p_target_id: targetId,
+        p_promo_type: promoType,
+        p_payment_ref: paymentRef || `DEV_SIM_${Date.now()}`
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data) {
+        const promo: PromotionRecord = {
+          id: data.id,
+          userId: data.user_id,
+          targetType: data.target_type,
+          targetId: data.target_id,
+          promoType: data.promo_type,
+          priceInr: Number(data.price_inr),
+          status: data.status,
+          startsAt: data.starts_at,
+          expiresAt: data.expires_at,
+          paymentReference: data.payment_reference
+        };
+
+        // Update local items state
+        if (targetType === 'listing') {
+          setListings(prev => prev.map(l => {
+            if (l.id === targetId) {
+              return {
+                ...l,
+                isFeatured: promoType === 'featured_7d' || promoType === 'featured_30d' ? true : l.isFeatured,
+                isBoosted: promoType === 'boost_24h' ? true : l.isBoosted,
+                boostExpiresAt: promoType === 'boost_24h' ? Date.now() + durationMs : l.boostExpiresAt
+              };
+            }
+            return l;
+          }));
+        } else if (targetType === 'wanted_request') {
+          setWantedRequests(prev => prev.map(w => {
+            if (w.id === targetId) {
+              return { ...w, isHighlighted: true };
+            }
+            return w;
+          }));
+        }
+
+        setPromotions(prev => [promo, ...prev]);
+        return promo;
+      }
+    }
+
+    // Offline / Demo Fallback Simulation
+    const promo: PromotionRecord = {
+      id: `promo-demo-${Date.now()}`,
+      userId: user?.id || 'demo-user',
+      targetType,
+      targetId,
+      promoType,
+      priceInr,
+      status: 'active',
+      startsAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + durationMs).toISOString(),
+      paymentReference: paymentRef || 'SIMULATED_LOCAL'
+    };
+
+    if (targetType === 'listing') {
+      setListings(prev => prev.map(l => {
+        if (l.id === targetId) {
+          return {
+            ...l,
+            isFeatured: promoType === 'featured_7d' || promoType === 'featured_30d' ? true : l.isFeatured,
+            isBoosted: promoType === 'boost_24h' ? true : l.isBoosted,
+            boostExpiresAt: promoType === 'boost_24h' ? Date.now() + durationMs : l.boostExpiresAt
+          };
+        }
+        return l;
+      }));
+    } else if (targetType === 'wanted_request') {
+      setWantedRequests(prev => prev.map(w => {
+        if (w.id === targetId) {
+          return { ...w, isHighlighted: true };
+        }
+        return w;
+      }));
+    }
+
+    // Add in-app confirmation notification
+    const confirmationNotif: InAppNotification = {
+      id: `notif-promo-${Date.now()}`,
+      userId: user?.id || 'demo-user',
+      title: 'Promotion Activated!',
+      message: `Your ${promoType.replace('_', ' ')} is active for ₹${priceInr}.`,
+      type: 'promotion_active',
+      linkId: targetId,
+      linkType: targetType === 'listing' ? 'listing' : 'wanted',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      timestamp: Date.now()
+    };
+    setNotifications(prev => [confirmationNotif, ...prev]);
+    setPromotions(prev => [promo, ...prev]);
+    return promo;
+  };
+
   // Escape key handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1379,6 +1771,9 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         else if (isListItemModalOpen) setIsListItemModalOpen(false);
         else if (isProfileDrawerOpen) setIsProfileDrawerOpen(false);
         else if (isResetConfirmOpen) setIsResetConfirmOpen(false);
+        else if (isPreferencesModalOpen) setIsPreferencesModalOpen(false);
+        else if (isNotificationCenterOpen) setIsNotificationCenterOpen(false);
+        else if (isPromoteModalOpen) setIsPromoteModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -1386,7 +1781,8 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, [
     contactingProduct, reportingProduct, selectedProduct, selectedWantedRequest, 
     selectedSellerProfile, isReviewModalOpen, isWalletModalOpen, isPostWantedModalOpen, 
-    isListItemModalOpen, isProfileDrawerOpen, isResetConfirmOpen
+    isListItemModalOpen, isProfileDrawerOpen, isResetConfirmOpen, isPreferencesModalOpen,
+    isNotificationCenterOpen, isPromoteModalOpen
   ]);
 
   return (
@@ -1465,6 +1861,27 @@ export const CampusProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         userCoords,
         setUserCoords,
         requestUserLocation,
+        selectedDistanceRadius,
+        setSelectedDistanceRadius,
+        selectedCampusLandmark,
+        setSelectedCampusLandmark,
+        userCategoryPreferences,
+        saveCategoryPreferences,
+        isPreferencesModalOpen,
+        setIsPreferencesModalOpen,
+        notifications,
+        unreadNotificationCount: notifications.filter(n => !n.isRead).length,
+        isNotificationCenterOpen,
+        setIsNotificationCenterOpen,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        deleteNotification,
+        promotions,
+        isPromoteModalOpen,
+        setIsPromoteModalOpen,
+        promotingTarget,
+        setPromotingTarget,
+        requestPromotion,
         isPresentationMode,
         setIsPresentationMode,
         presentationStep,

@@ -15,8 +15,10 @@ import {
   Home, 
   ShieldCheck,
   Flame,
-  Star
+  Star,
+  Zap
 } from 'lucide-react';
+import { calculateHaversineDistance, formatDistance } from '../lib/location';
 
 interface ProductCardProps {
   listing: Listing;
@@ -28,12 +30,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ listing }) => {
     toggleSaveItem, 
     isItemSaved,
     getSellerProfile,
-    setSelectedSellerProfile
+    setSelectedSellerProfile,
+    userCoords,
+    setIsPromoteModalOpen,
+    setPromotingTarget
   } = useCampus();
 
   const [imageError, setImageError] = useState(false);
   const saved = isItemSaved(listing.id);
   const sellerProfile = getSellerProfile(listing.sellerName);
+
+  const distanceKm = (userCoords && listing.coordinates)
+    ? calculateHaversineDistance(userCoords.lat, userCoords.lng, listing.coordinates.lat, listing.coordinates.lng)
+    : null;
+  const distanceBadge = distanceKm !== null ? formatDistance(distanceKm) : null;
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -81,7 +91,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ listing }) => {
           <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br from-[#FAF8F5] to-[#E8EFEA] dark:from-stone-900 dark:to-stone-800 text-center">
             {getCategoryIcon(listing.category)}
             <span className="text-xs font-semibold text-stone-600 dark:text-stone-300 mt-2">{listing.category}</span>
-            <span className="text-[10px] text-stone-400">CampusLoop Item</span>
+            <span className="text-[10px] text-stone-400">Campus Market Item</span>
           </div>
         )}
 
@@ -151,10 +161,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ listing }) => {
             <span className="font-semibold text-emerald-800 dark:text-emerald-400 uppercase tracking-wide">
               {listing.category}
             </span>
-            <span className="flex items-center gap-1 text-stone-500 dark:text-stone-400 truncate max-w-[140px]" title={listing.campusLocation}>
-              <MapPin className="w-3 h-3 text-stone-400 shrink-0" />
-              <span className="truncate">{listing.campusLocation}</span>
-            </span>
+            <div className="flex items-center gap-1.5 text-stone-500 dark:text-stone-400 truncate max-w-[160px]">
+              <span className="flex items-center gap-1 truncate" title={listing.campusLocation}>
+                <MapPin className="w-3 h-3 text-stone-400 shrink-0" />
+                <span className="truncate">{listing.campusLocation}</span>
+              </span>
+              {distanceBadge && (
+                <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-[9px] shrink-0">
+                  {distanceBadge}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Title */}
@@ -208,9 +225,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({ listing }) => {
                 ★ {sellerProfile.averageRating}
               </span>
             </button>
-            <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold block">
-              Direct Campus Pickup
-            </span>
+            {listing.isUserListing ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPromotingTarget({
+                    type: 'listing',
+                    id: listing.id,
+                    title: listing.title,
+                    category: listing.category
+                  });
+                  setIsPromoteModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 text-[10px] font-bold transition-colors cursor-pointer"
+                title="Promote / Boost listing"
+              >
+                <Zap className="w-2.5 h-2.5 text-amber-600" />
+                <span>Promote ₹3</span>
+              </button>
+            ) : (
+              <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold block">
+                Direct Campus Pickup
+              </span>
+            )}
           </div>
         </div>
       </div>

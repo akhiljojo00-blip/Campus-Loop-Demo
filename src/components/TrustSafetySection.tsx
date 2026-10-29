@@ -38,7 +38,7 @@ export const TrustSafetySection: React.FC = () => {
     },
     {
       title: 'Prohibited & Restricted Items Policy',
-      description: 'CampusLoop strictly prohibits weapons, alcohol, prescription drugs, copyrighted test answer keys, or stolen equipment. Listings violating this are removed.',
+      description: 'Campus Market strictly prohibits weapons, alcohol, prescription drugs, copyrighted test answer keys, or stolen equipment. Listings violating this are removed.',
       icon: <AlertTriangle className="w-5 h-5 text-purple-800 dark:text-purple-300" />,
       color: 'bg-purple-50 dark:bg-purple-950/80 border-purple-200 dark:border-purple-800'
     },

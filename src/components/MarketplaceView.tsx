@@ -8,9 +8,12 @@ import {
   RotateCcw, 
   MapPin,
   PlusCircle,
-  Compass
+  Compass,
+  Navigation,
+  Bell
 } from 'lucide-react';
-import { Category, Condition, SortOption } from '../types';
+import { Category, Condition, SortOption, DistanceRadiusOption } from '../types';
+import { CAMPUS_LANDMARKS, calculateHaversineDistance, getRadiusLimitKm } from '../lib/location';
 
 export const MarketplaceView: React.FC = () => {
   const { 
@@ -28,7 +31,11 @@ export const MarketplaceView: React.FC = () => {
     clearAllFilters,
     setIsListItemModalOpen,
     setActiveTab,
-    userCoords
+    userCoords,
+    setUserCoords,
+    selectedDistanceRadius,
+    setSelectedDistanceRadius,
+    setIsPreferencesModalOpen
   } = useCampus();
 
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -86,11 +93,22 @@ export const MarketplaceView: React.FC = () => {
       result = result.filter(item => item.campusLocation.toLowerCase().includes(selectedCampusZone.toLowerCase()));
     }
 
+    // Distance Radius Filter
+    if (selectedDistanceRadius !== 'all' && userCoords) {
+      const limitKm = getRadiusLimitKm(selectedDistanceRadius);
+      result = result.filter(item => {
+        if (!item.coordinates) return true;
+        const dist = calculateHaversineDistance(userCoords.lat, userCoords.lng, item.coordinates.lat, item.coordinates.lng);
+        return dist <= limitKm;
+      });
+    }
+
     // Sorting
     result.sort((a, b) => {
-      // Pinned / Boosted items first
-      if (a.isBoosted && !b.isBoosted) return -1;
-      if (!a.isBoosted && b.isBoosted) return 1;
+      // 1. Prioritize Featured and Boosted promotions
+      const aScore = (a.isFeatured ? 2 : 0) + (a.isBoosted ? 1 : 0);
+      const bScore = (b.isFeatured ? 2 : 0) + (b.isBoosted ? 1 : 0);
+      if (aScore !== bScore) return bScore - aScore;
 
       if (selectedSort === 'price-low') {
         return (a.agreedPrice || a.price) - (b.agreedPrice || b.price);
@@ -104,8 +122,8 @@ export const MarketplaceView: React.FC = () => {
         return savingsB - savingsA;
       }
       if (selectedSort === 'nearest' && userCoords) {
-        const distA = Math.hypot((a.coordinates?.lat || 28.545) - userCoords.lat, (a.coordinates?.lng || 77.192) - userCoords.lng);
-        const distB = Math.hypot((b.coordinates?.lat || 28.545) - userCoords.lat, (b.coordinates?.lng || 77.192) - userCoords.lng);
+        const distA = a.coordinates ? calculateHaversineDistance(userCoords.lat, userCoords.lng, a.coordinates.lat, a.coordinates.lng) : 999;
+        const distB = b.coordinates ? calculateHaversineDistance(userCoords.lat, userCoords.lng, b.coordinates.lat, b.coordinates.lng) : 999;
         return distA - distB;
       }
       // 'newest' default
@@ -113,9 +131,9 @@ export const MarketplaceView: React.FC = () => {
     });
 
     return result;
-  }, [listings, searchQuery, selectedCategory, selectedCondition, selectedSort, selectedCampusZone, userCoords]);
+  }, [listings, searchQuery, selectedCategory, selectedCondition, selectedSort, selectedCampusZone, selectedDistanceRadius, userCoords]);
 
-  const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'All' || selectedCondition !== 'All' || selectedSort !== 'newest' || selectedCampusZone !== 'All';
+  const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'All' || selectedCondition !== 'All' || selectedSort !== 'newest' || selectedCampusZone !== 'All' || selectedDistanceRadius !== 'all';
 
   return (
     <div className="py-8 sm:py-12 bg-[#FAF8F5] dark:bg-[#0D1C15] min-h-[85vh] transition-colors">
@@ -221,6 +239,42 @@ export const MarketplaceView: React.FC = () => {
                 <option value="savings">Highest Student Savings</option>
                 <option value="nearest">Nearest Location First</option>
               </select>
+            </div>
+
+          </div>
+
+          {/* Location Radius & Match Alerts Sub-Bar */}
+          <div className="mt-3.5 pt-3.5 border-t border-stone-100 dark:border-stone-800/80 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+            {/* Radius selector */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-stone-500 font-semibold text-[11px] flex items-center gap-1">
+                <Navigation className="w-3 h-3 text-emerald-600" />
+                <span>Radius:</span>
+              </span>
+              {(['all', '500m', '1km', '3km', '5km'] as DistanceRadiusOption[]).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setSelectedDistanceRadius(r)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                    selectedDistanceRadius === r
+                      ? 'bg-[#153225] text-white shadow-2xs'
+                      : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200'
+                  }`}
+                >
+                  {r === 'all' ? 'All Campus' : `< ${r}`}
+                </button>
+              ))}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsPreferencesModalOpen(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-semibold text-[11px] hover:bg-emerald-100 transition-colors cursor-pointer"
+              >
+                <Bell className="w-3 h-3 text-[#BA4E29]" />
+                <span>Match Alerts</span>
+              </button>
             </div>
 
             {/* Mobile Filter Toggle */}

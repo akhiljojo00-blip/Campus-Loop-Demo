@@ -58,7 +58,7 @@ export const HowItWorksSection: React.FC = () => {
             Simple 3-Step Process
           </span>
           <h2 className="font-serif font-extrabold text-3xl sm:text-4xl text-[#153225] dark:text-[#FAF8F5] mt-3">
-            How CampusLoop Works
+            How Campus Market Works
           </h2>
           <p className="text-sm sm:text-base text-stone-600 dark:text-stone-400 mt-2">
             No shipping delays. No payment gateway cut. A closed, trusted peer network tailored for your college campus.
@@ -118,7 +118,7 @@ export const HowItWorksSection: React.FC = () => {
                 Safety first: verified campus-only exchanges
               </h3>
               <p className="text-xs sm:text-sm text-[#FAF8F5]/80 leading-relaxed mb-6">
-                Because CampusLoop operates strictly on your college premises, you do not have to give your home address to internet strangers. Here is the recommended student exchange code:
+                Because Campus Market operates strictly on your college premises, you do not have to give your home address to internet strangers. Here is the recommended student exchange code:
               </p>
 
               <div className="space-y-2.5">

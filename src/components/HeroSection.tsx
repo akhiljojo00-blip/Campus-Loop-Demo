@@ -49,7 +49,7 @@ export const HeroSection: React.FC = () => {
             <div className="flex flex-wrap items-center gap-2 mb-6">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E1EDE5] dark:bg-emerald-950/80 border border-[#C2DBCB] dark:border-emerald-800 text-[#153225] dark:text-emerald-300 text-xs font-bold tracking-wide uppercase shadow-xs">
                 <Sparkles className="w-3.5 h-3.5 text-[#BA4E29]" />
-                <span>Your campus. Your stuff. Your loop.</span>
+                <span>Buy, Sell and Find What You Need on Campus</span>
               </div>
 
               <button
@@ -62,14 +62,13 @@ export const HeroSection: React.FC = () => {
 
             {/* Editorial Headline */}
             <h1 className="font-serif font-extrabold text-4xl sm:text-5xl xl:text-6xl text-[#153225] dark:text-[#FAF8F5] tracking-tight leading-[1.12] mb-6">
-              Good stuff deserves <br className="hidden sm:block" />
-              <span className="italic font-normal text-[#BA4E29]">another semester.</span>
+              Buy, sell and find <br className="hidden sm:block" />
+              <span className="italic font-normal text-[#BA4E29]">what you need on campus.</span>
             </h1>
 
             {/* Supporting Copy */}
             <p className="text-base sm:text-lg text-stone-600 dark:text-stone-300 max-w-2xl font-normal leading-relaxed mb-8">
-              Buy, sell, swap, and bargain for student essentials within your college community. 
-              Sellers recover cash, juniors find affordable course gear, and textbooks stay in circulation.
+              The verified student marketplace. Buy gently-used course gear, sell textbooks and dorm essentials in seconds, post on the Wanted Board, and discover items right next door in your hostels.
             </p>
 
             {/* Action Buttons */}
@@ -99,23 +98,33 @@ export const HeroSection: React.FC = () => {
               </button>
             </div>
 
-            {/* Quick 2.0 Feature Pills */}
-            <div className="flex flex-wrap items-center gap-2 mb-8 text-xs font-semibold text-stone-600 dark:text-stone-300">
+            {/* 5 Core Value Pillars */}
+            <div className="flex flex-wrap items-center gap-2 mb-8 text-xs font-semibold text-stone-700 dark:text-stone-300">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-emerald-900/60 shadow-xs">
+                <span>🎓 1. Buy From Verified Peers</span>
+              </span>
+              <button
+                onClick={() => setIsListItemModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-emerald-900/60 shadow-xs hover:border-[#BA4E29] transition-colors"
+              >
+                <span>⚡ 2. Sell In Seconds</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('wanted')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-emerald-900/60 shadow-xs hover:border-[#BA4E29] transition-colors"
+              >
+                <ClipboardList className="w-3.5 h-3.5 text-[#BA4E29]" />
+                <span>📋 3. Wanted Board</span>
+              </button>
               <button
                 onClick={() => setActiveTab('map')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-emerald-900/60 hover:border-emerald-500 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-emerald-900/60 shadow-xs hover:border-emerald-500 transition-colors"
               >
                 <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Interactive Campus Map</span>
+                <span>📍 4. Campus & Hostel Discovery</span>
               </button>
-              <button
-                onClick={() => setIsWalletModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-emerald-900/60 hover:border-amber-500 transition-colors"
-              >
-                <span>🪙 LoopCoins Rewards</span>
-              </button>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-emerald-900/60">
-                <span>🤝 Peer Price Bargaining</span>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-emerald-900/60 shadow-xs">
+                <span>🤝 5. Safe Chat & Bargaining</span>
               </span>
             </div>
 
@@ -126,8 +135,8 @@ export const HeroSection: React.FC = () => {
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-stone-800 dark:text-stone-200">Made for campus life</p>
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400">Meet peers inside college grounds</p>
+                  <p className="text-xs font-bold text-stone-800 dark:text-stone-200">Verified Campus Community</p>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400">Strictly student-to-student exchange</p>
                 </div>
               </div>
 
@@ -136,7 +145,7 @@ export const HeroSection: React.FC = () => {
                   <Coins className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-stone-800 dark:text-stone-200">Student-friendly prices</p>
+                  <p className="text-xs font-bold text-stone-800 dark:text-stone-200">Student-Friendly Prices</p>
                   <p className="text-[11px] text-stone-500 dark:text-stone-400">Up to 70% off retail pricing</p>
                 </div>
               </div>
@@ -146,8 +155,8 @@ export const HeroSection: React.FC = () => {
                   <Recycle className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-stone-800 dark:text-stone-200">Reuse more, waste less</p>
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400">Pass gear batch-to-batch</p>
+                  <p className="text-xs font-bold text-stone-800 dark:text-stone-200">Zero Commission Waste</p>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400">Reuse gear batch-to-batch</p>
                 </div>
               </div>
             </div>
